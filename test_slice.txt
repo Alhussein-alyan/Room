@@ -1,0 +1,50 @@
+=== T1 ===
+    <header class="hero">
+      <span class="kicker">ir · study notes</span>
+      <h1 class="title">information retrieval notes</h1>
+      <div class="meta">4 parts · boolean model to tolerant retrie
+...
+ dictionary</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>dictionary structures, wildcards, spelling correction, soundex</td>
+<td>lecture 4, tolerant retrieval</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+
+=== T2 ===
+<h2 id="part-1---what-is-information-retrieval">part 1 - what is information retrieval</h2>
+<h3 id="definition">definition</h3>
+<p><strong>information retrieval (ir)</strong> means finding material (u
+...
+ dir="rtl" lang="ar"><span class="artag">عربي</span><p>الخلاصة: الـ ir بيدور في نصوص غير منظمة، والمعيار هو الـ relevance مش الصح والغلط، والبحث بيتكرر لحد ما المستخدم يوصل للي عايزه</p></div>
+<hr />
+
+=== T3 ===
+<h2 id="part-2---boolean-retrieval">part 2 - boolean retrieval</h2>
+<h3 id="the-naive-way-grep">the naive way: grep</h3>
+<p>scan every document for every query. fine for small data, hopeless for big d
+...
+="artag">عربي</span><p>الخلاصة: الـ inverted index هو قاموس + قوائم مرتبة، الـ and معناه intersect بتكلفة خطية، وبنبدأ بأقصر قائمة. وفي التقييم بنستخدم precision و recall مش accuracy</p></div>
+<hr />
+
+=== T4 ===
+<h2 id="part-3---terms-tokens-normalization-and-faster-postings">part 3 - terms, tokens, normalization and faster postings</h2>
+<h3 id="the-pipeline">the pipeline</h3>
+<pre><code>documents -&gt; token
+...
+artag">عربي</span><p>الخلاصة: قبل الفهرسة نقطع النص ونوحد الكلمات، وغالبا بنحتفظ بالـ stop words عشان العبارات. للـ and السريع نستخدم skip pointers، وللعبارات نستخدم positional index</p></div>
+<hr />
+
+=== T5 ===
+<h2 id="part-4---dictionaries-and-tolerant-retrieval">part 4 - dictionaries and tolerant retrieval</h2>
+<p>"tolerant" means the search still works when the query is partial or misspelled.</p>
+<h3 id="
+...
+بي</span><p>الخلاصة: الـ hash سريع للمطابقة التامة والـ tree يدعم البحث بالبادئة. للنجمة نستخدم b-tree أو permuterm أو k-gram. وللأخطاء الإملائية edit distance مع n-gram، وللأسماء soundex</p></div>
+
+
+

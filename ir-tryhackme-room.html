@@ -1,0 +1,3413 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>TryHackMe | Information Retrieval (IR) Room</title>
+<meta name="description" content="TryHackMe style interactive room covering Information Retrieval: Boolean Retrieval, Inverted Index, Tokenization, Skip Pointers, Dictionaries, and Tolerant Retrieval. Includes Arabic study notes.">
+<meta name="theme-color" content="#0d1117">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --thm-bg: #0b0f19;
+  --thm-bg-alt: #111726;
+  --thm-card: #151d30;
+  --thm-card-inner: #192338;
+  --thm-border: #222f46;
+  --thm-border-light: #2b3b57;
+  --thm-text: #e2e8f0;
+  --thm-text-muted: #94a3b8;
+  --thm-text-dim: #64748b;
+  --thm-green: #21c35e;
+  --thm-green-hover: #1db154;
+  --thm-green-glow: rgba(33, 195, 94, 0.25);
+  --thm-green-subtle: rgba(33, 195, 94, 0.1);
+  --thm-red: #ef4444;
+  --thm-red-subtle: rgba(239, 68, 68, 0.12);
+  --thm-amber: #f59e0b;
+  --thm-amber-subtle: rgba(245, 158, 11, 0.1);
+  --thm-blue: #38bdf8;
+  --thm-blue-subtle: rgba(56, 189, 248, 0.1);
+  --thm-code-bg: #080c14;
+  --thm-locked-bg: rgba(11, 15, 25, 0.9);
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'JetBrains Mono', Consolas, Menlo, monospace;
+  --arabic: 'Cairo', 'Noto Naskh Arabic', 'Segoe UI', sans-serif;
+}
+
+html[data-theme="light"] {
+  --thm-bg: #f4f6fa;
+  --thm-bg-alt: #ffffff;
+  --thm-card: #ffffff;
+  --thm-card-inner: #f8fafc;
+  --thm-border: #e2e8f0;
+  --thm-border-light: #cbd5e1;
+  --thm-text: #0f172a;
+  --thm-text-muted: #475569;
+  --thm-text-dim: #94a3b8;
+  --thm-green: #16a34a;
+  --thm-green-hover: #15803d;
+  --thm-green-glow: rgba(22, 163, 74, 0.2);
+  --thm-green-subtle: rgba(22, 163, 74, 0.08);
+  --thm-code-bg: #1e293b;
+  --thm-locked-bg: rgba(244, 246, 250, 0.94);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 130px;
+}
+body {
+  background-color: var(--thm-bg);
+  color: var(--thm-text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* ========================================================
+   STICKY HEADER & ROOM PROGRESS (STAYS LOCKED AS YOU SCROLL)
+   ======================================================== */
+.thm-sticky-header-container {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--thm-bg-alt);
+  border-bottom: 1px solid var(--thm-border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Thin Reading Progress Indicator on Header Border */
+#thm-scroll-line {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2.5px;
+  width: 0%;
+  background: var(--thm-blue);
+  box-shadow: 0 0 10px var(--thm-blue);
+  z-index: 110;
+  transition: width 0.08s linear;
+}
+
+/* Top Nav Row */
+header.thm-top-nav {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.thm-top-inner {
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.thm-brand-col {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.thm-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--thm-text);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+  flex-shrink: 0;
+}
+.thm-logo svg {
+  width: 24px;
+  height: 24px;
+  fill: var(--thm-red);
+}
+.thm-logo span.thm-green-dot {
+  color: var(--thm-green);
+}
+.thm-room-badge {
+  background: var(--thm-green-subtle);
+  color: var(--thm-green);
+  border: 1px solid var(--thm-green);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.thm-room-title-crumb {
+  color: var(--thm-text-muted);
+  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.thm-room-title-crumb strong {
+  color: var(--thm-text);
+}
+
+.thm-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.thm-btn {
+  background: var(--thm-card-inner);
+  border: 1px solid var(--thm-border);
+  color: var(--thm-text);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  user-select: none;
+}
+.thm-btn:hover {
+  border-color: var(--thm-green);
+  color: var(--thm-green);
+  box-shadow: 0 0 10px var(--thm-green-glow);
+}
+.thm-btn.active {
+  background: var(--thm-green-subtle);
+  border-color: var(--thm-green);
+  color: var(--thm-green);
+}
+.thm-btn-reset {
+  color: var(--thm-red);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.thm-btn-reset:hover {
+  background: var(--thm-red-subtle);
+  border-color: var(--thm-red);
+  color: var(--thm-red);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+/* Persistent Room Progress Strip */
+.thm-progress-strip {
+  padding: 6px 20px 8px;
+}
+.thm-progress-inner {
+  max-width: 1380px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.thm-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.thm-progress-pct {
+  color: var(--thm-green);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.thm-progress-stats {
+  color: var(--thm-text-muted);
+  font-size: 11.5px;
+}
+.thm-progress-bar-track {
+  width: 100%;
+  height: 6px;
+  background: var(--thm-card-inner);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--thm-border);
+  position: relative;
+}
+.thm-progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #10b981, #21c35e, #34d399);
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(33, 195, 94, 0.6);
+}
+
+/* Mobile Quick Task Navigation Bar (Horizontally Scrollable) */
+.thm-mobile-task-nav {
+  display: none;
+  overflow-x: auto;
+  white-space: nowrap;
+  gap: 6px;
+  padding: 6px 14px 8px;
+  background: var(--thm-bg-alt);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.thm-mobile-task-nav::-webkit-scrollbar {
+  display: none;
+}
+.thm-mob-nav-btn {
+  background: var(--thm-card-inner);
+  border: 1px solid var(--thm-border);
+  color: var(--thm-text-muted);
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.thm-mob-nav-btn.active {
+  border-color: var(--thm-green);
+  color: var(--thm-green);
+  background: var(--thm-green-subtle);
+}
+.thm-mob-nav-btn.completed {
+  border-color: rgba(33, 195, 94, 0.4);
+  color: var(--thm-green);
+}
+.thm-mob-nav-btn.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Main Layout Grid */
+.thm-container {
+  max-width: 1380px;
+  margin: 24px auto;
+  padding: 0 20px;
+  width: 100%;
+  flex: 1;
+}
+.thm-layout {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+/* Left Sidebar */
+aside.thm-sidebar {
+  position: sticky;
+  top: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.thm-sidebar-card {
+  background: var(--thm-card);
+  border: 1px solid var(--thm-border);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+.thm-sidebar-card h3 {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--thm-text-muted);
+  margin-bottom: 12px;
+}
+.thm-room-meta-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+}
+.thm-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--thm-border);
+}
+.thm-meta-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.thm-meta-label { color: var(--thm-text-dim); }
+.thm-meta-val {
+  font-weight: 600;
+  color: var(--thm-text);
+  font-family: var(--mono);
+}
+.thm-badge-pill {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.badge-medium {
+  background: var(--thm-amber-subtle);
+  color: var(--thm-amber);
+  border: 1px solid var(--thm-amber);
+}
+
+/* Task Nav Checklist */
+.thm-task-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.thm-task-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: var(--thm-card-inner);
+  border: 1px solid var(--thm-border);
+  text-decoration: none;
+  color: var(--thm-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.thm-task-nav-item:hover {
+  background: var(--thm-border);
+  color: var(--thm-text);
+  transform: translateX(2px);
+}
+.thm-task-nav-item.active {
+  border-color: var(--thm-green);
+  color: var(--thm-text);
+  background: var(--thm-green-subtle);
+}
+.thm-task-nav-item.completed {
+  border-color: rgba(33, 195, 94, 0.4);
+}
+.thm-task-nav-item.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.thm-task-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.thm-nav-icon {
+  font-size: 14px;
+  display: inline-flex;
+}
+.thm-nav-status {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+.thm-status-icon-locked { color: var(--thm-text-dim); }
+.thm-status-icon-pending { color: var(--thm-amber); }
+.thm-status-icon-complete { color: var(--thm-green); }
+
+/* Main Content Area */
+main.thm-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-width: 0;
+}
+
+/* THM Task Card */
+.thm-task-card {
+  background: var(--thm-card);
+  border: 1px solid var(--thm-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  position: relative;
+}
+.thm-task-card:hover {
+  border-color: var(--thm-border-light);
+}
+.thm-task-card.active-card {
+  border-color: var(--thm-green);
+  box-shadow: 0 0 25px rgba(33, 195, 94, 0.12);
+}
+.thm-task-card.is-locked {
+  border-color: var(--thm-border);
+}
+
+/* Task Header */
+.thm-task-header {
+  padding: 16px 22px;
+  background: var(--thm-card-inner);
+  border-bottom: 1px solid var(--thm-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease;
+}
+.thm-task-header:hover {
+  background: var(--thm-border);
+}
+.thm-task-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.thm-task-num-badge {
+  background: var(--thm-bg);
+  color: var(--thm-green);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--thm-border);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.thm-task-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--thm-text);
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+.thm-task-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.thm-task-status-tag {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.tag-locked {
+  background: rgba(100, 116, 139, 0.15);
+  color: var(--thm-text-dim);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+.tag-active {
+  background: var(--thm-blue-subtle);
+  color: var(--thm-blue);
+  border: 1px solid var(--thm-blue);
+}
+.tag-completed {
+  background: var(--thm-green-subtle);
+  color: var(--thm-green);
+  border: 1px solid var(--thm-green);
+}
+.thm-chevron-icon {
+  width: 18px;
+  height: 18px;
+  fill: var(--thm-text-muted);
+  transition: transform 0.25s ease;
+}
+.thm-task-card.collapsed .thm-chevron-icon {
+  transform: rotate(-90deg);
+}
+
+/* Task Content Container */
+.thm-task-body-container {
+  position: relative;
+  transition: all 0.3s ease;
+}
+.thm-task-card.collapsed .thm-task-body-container {
+  display: none;
+}
+
+/* Locked Overlay */
+.thm-locked-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: var(--thm-locked-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 20;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  border-radius: 0 0 14px 14px;
+}
+.thm-task-card.is-locked .thm-locked-overlay {
+  display: flex;
+}
+.thm-locked-box {
+  background: var(--thm-card);
+  border: 1px solid var(--thm-border-light);
+  border-radius: 12px;
+  padding: 28px 36px;
+  max-width: 440px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+.thm-locked-icon-big {
+  width: 48px;
+  height: 48px;
+  fill: var(--thm-amber);
+  margin-bottom: 14px;
+}
+.thm-locked-box h4 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--thm-text);
+  margin-bottom: 8px;
+}
+.thm-locked-box p {
+  font-size: 13.5px;
+  color: var(--thm-text-muted);
+  line-height: 1.5;
+}
+
+/* Task Prose / Content Styling */
+.thm-task-content-inner {
+  padding: 28px 32px;
+  color: var(--thm-text);
+  word-break: break-word;
+}
+.thm-task-card.is-locked .thm-task-content-inner {
+  filter: blur(4px);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Hero / Header styles inside Task 1 */
+.hero {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--thm-border);
+  margin-bottom: 24px;
+}
+.kicker {
+  display: inline-block;
+  font: 600 12px var(--mono);
+  color: var(--thm-green);
+  background: var(--thm-green-subtle);
+  border: 1px solid var(--thm-green);
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: .04em;
+  margin-bottom: 10px;
+}
+h1.title {
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 8px 0 10px;
+  color: var(--thm-text);
+  line-height: 1.25;
+}
+.meta {
+  color: var(--thm-text-muted);
+  font: 13px var(--mono);
+  word-break: break-word;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+.tags span {
+  font: 11.5px var(--mono);
+  color: var(--thm-text-muted);
+  border: 1px solid var(--thm-border);
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--thm-card-inner);
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0 18px;
+  flex-wrap: wrap;
+}
+.actions .btn {
+  font: 500 12.5px var(--sans);
+  color: var(--thm-text);
+  background: var(--thm-card-inner);
+  border: 1px solid var(--thm-border);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: .15s;
+}
+.actions .btn:hover {
+  border-color: var(--thm-green);
+  color: var(--thm-green);
+}
+.tldr {
+  margin: 16px 0 10px;
+  padding: 16px 20px;
+  border: 1px solid var(--thm-border);
+  border-left: 4px solid var(--thm-green);
+  border-radius: 8px;
+  background: var(--thm-card-inner);
+}
+.tldr b.l {
+  display: block;
+  font: 700 11px var(--mono);
+  letter-spacing: .12em;
+  color: var(--thm-green);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.tldr p { margin: 0; font-size: 14px; }
+
+/* Prose Elements */
+.thm-task-content-inner h2 {
+  font-size: 21px;
+  font-weight: 700;
+  margin: 26px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--thm-border);
+  color: var(--thm-text);
+  letter-spacing: -0.3px;
+}
+.thm-task-content-inner h3 {
+  font-size: 16.5px;
+  font-weight: 700;
+  margin: 20px 0 10px;
+  color: var(--thm-blue);
+}
+.thm-task-content-inner h4 {
+  font-size: 14.5px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  color: var(--thm-green);
+  font-family: var(--mono);
+}
+.thm-task-content-inner p, .thm-task-content-inner li {
+  margin: 10px 0;
+  line-height: 1.7;
+}
+.thm-task-content-inner ul, .thm-task-content-inner ol {
+  padding-left: 22px;
+  margin: 12px 0;
+}
+.thm-task-content-inner code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  background: var(--thm-code-bg);
+  border: 1px solid var(--thm-border);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--thm-green);
+}
+
+/* THM Interactive Terminal Window for pre/code */
+.thm-terminal-box {
+  margin: 18px 0;
+  background: var(--thm-code-bg);
+  border: 1px solid var(--thm-border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+.thm-terminal-header {
+  background: #111624;
+  border-bottom: 1px solid var(--thm-border);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+.thm-terminal-dots {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.thm-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+.thm-terminal-title {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--thm-text-muted);
+}
+.thm-copy-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--thm-border);
+  color: var(--thm-text-muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.thm-copy-btn:hover {
+  color: var(--thm-green);
+  border-color: var(--thm-green);
+}
+pre {
+  margin: 0;
+  padding: 14px 16px;
+  background: transparent;
+  color: #e2e8f0;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* Tables */
+.tw {
+  overflow-x: auto;
+  margin: 18px 0;
+  border: 1px solid var(--thm-border);
+  border-radius: 10px;
+  background: var(--thm-card-inner);
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13.5px;
+  min-width: 480px;
+}
+th, td {
+  padding: 9px 12px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--thm-border);
+}
+th {
+  font: 700 11.5px var(--mono);
+  letter-spacing: .04em;
+  color: var(--thm-text-muted);
+  background: rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+tr:last-child td { border-bottom: 0; }
+tbody tr:hover td {
+  background: rgba(33, 195, 94, 0.04);
+}
+
+/* Arabic Notes Callout */
+.ar {
+  margin: 18px 0;
+  padding: 14px 18px;
+  border: 1px solid var(--thm-border);
+  border-right: 4px solid var(--thm-amber);
+  border-radius: 10px;
+  background: var(--thm-amber-subtle);
+  direction: rtl;
+  text-align: right;
+  font-family: var(--arabic);
+  font-size: 15.5px;
+  font-weight: 600;
+  line-height: 1.85;
+  position: relative;
+}
+.ar p { margin: 0; }
+.ar .artag {
+  display: inline-block;
+  font-family: var(--arabic);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--thm-amber);
+  border: 1px solid var(--thm-amber);
+  border-radius: 999px;
+  padding: 0 9px;
+  margin-left: 8px;
+  line-height: 1.8;
+  vertical-align: middle;
+}
+.arinl {
+  font-family: var(--arabic);
+  unicode-bidi: isolate;
+}
+body.no-ar .ar { display: none !important; }
+
+/* THM Questions Section */
+.thm-questions-wrapper {
+  margin-top: 32px;
+  border-top: 2px dashed var(--thm-border);
+  padding: 24px 28px 28px;
+  background: var(--thm-card-inner);
+  border-radius: 0 0 14px 14px;
+}
+.thm-questions-header-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.thm-questions-header-bar svg {
+  width: 20px;
+  height: 20px;
+  fill: var(--thm-green);
+}
+.thm-questions-header-title {
+  color: var(--thm-green);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+
+/* Task 1 "No answer needed" Bar */
+.thm-no-answer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: var(--thm-bg);
+  border: 1px solid var(--thm-border);
+  border-radius: 10px;
+  padding: 12px 18px;
+  flex-wrap: wrap;
+}
+.thm-badge-no-answer {
+  background: #1f293d;
+  color: #94a3b8;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #2b3b55;
+  user-select: none;
+}
+.thm-mascot-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.thm-mascot-icon svg {
+  width: 38px;
+  height: 38px;
+  filter: drop-shadow(0 0 8px rgba(33, 195, 94, 0.4));
+}
+.thm-btn-complete {
+  background: var(--thm-green);
+  color: #0b101b;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 9px 22px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 14px var(--thm-green-glow);
+}
+.thm-btn-complete:hover {
+  background: var(--thm-green-hover);
+  transform: translateY(-1px);
+}
+.thm-btn-complete.completed-state {
+  background: var(--thm-green);
+  color: #04140c;
+  cursor: default;
+}
+
+/* THM Question Item Cards */
+.thm-question-card {
+  background: var(--thm-bg);
+  border: 1px solid var(--thm-border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s ease;
+}
+.thm-question-card:last-child {
+  margin-bottom: 0;
+}
+.thm-question-card.solved {
+  border-color: rgba(33, 195, 94, 0.5);
+  background: rgba(33, 195, 94, 0.03);
+}
+.thm-question-prompt {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--thm-text);
+  margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+  line-height: 1.5;
+}
+.thm-q-idx {
+  color: var(--thm-green);
+  font-family: var(--mono);
+  font-weight: 700;
+}
+.thm-question-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.thm-input-field {
+  flex: 1;
+  min-width: 220px;
+  background: var(--thm-card-inner);
+  border: 1px solid var(--thm-border);
+  color: var(--thm-text);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 9px 13px;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+.thm-input-field:focus {
+  border-color: var(--thm-green);
+  box-shadow: 0 0 10px var(--thm-green-glow);
+}
+.thm-input-field.correct-input {
+  border-color: var(--thm-green);
+  background: rgba(33, 195, 94, 0.08);
+  color: var(--thm-green);
+  font-weight: 700;
+}
+.thm-input-field.shake {
+  animation: thmShake 0.4s ease-in-out;
+  border-color: var(--thm-red);
+}
+@keyframes thmShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.thm-btn-submit {
+  background: var(--thm-green);
+  color: #0b101b;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 9px 18px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.thm-btn-submit:hover {
+  background: var(--thm-green-hover);
+  box-shadow: 0 0 12px var(--thm-green-glow);
+}
+.thm-btn-submit.correct-btn {
+  background: var(--thm-green);
+  color: #04140c;
+  cursor: default;
+}
+.thm-btn-hint {
+  background: var(--thm-card-inner);
+  border: 1px solid var(--thm-border);
+  color: var(--thm-text-muted);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 9px 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+.thm-btn-hint:hover {
+  border-color: var(--thm-amber);
+  color: var(--thm-amber);
+}
+
+.thm-hint-text-box {
+  display: none;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: var(--thm-amber-subtle);
+  border: 1px solid var(--thm-amber);
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--thm-text);
+  line-height: 1.5;
+}
+.thm-hint-text-box.open { display: block; }
+
+.thm-feedback-alert {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--mono);
+  display: none;
+}
+.thm-feedback-alert.error {
+  display: block;
+  color: var(--thm-red);
+}
+.thm-feedback-alert.success {
+  display: block;
+  color: var(--thm-green);
+}
+
+/* Toast Message */
+#thm-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translate(-50%, 20px);
+  background: #111726;
+  border: 1px solid var(--thm-green);
+  color: var(--thm-green);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 90vw;
+  text-align: center;
+}
+#thm-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Room Completion Modal */
+.thm-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.thm-modal-backdrop.open { display: flex; }
+.thm-modal-box {
+  background: var(--thm-card);
+  border: 2px solid var(--thm-green);
+  border-radius: 16px;
+  padding: 32px 36px;
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 0 50px rgba(33, 195, 94, 0.35);
+  animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes modalPop {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.thm-modal-badge {
+  width: 72px;
+  height: 72px;
+  background: var(--thm-green-subtle);
+  border: 2px solid var(--thm-green);
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.thm-modal-badge svg {
+  width: 40px;
+  height: 40px;
+  fill: var(--thm-green);
+}
+.thm-modal-box h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--thm-text);
+  margin-bottom: 8px;
+}
+.thm-modal-box p {
+  color: var(--thm-text-muted);
+  font-size: 14px;
+  margin-bottom: 22px;
+}
+.thm-modal-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.thm-stat-cell {
+  background: var(--thm-card-inner);
+  border: 1px solid var(--thm-border);
+  padding: 10px;
+  border-radius: 8px;
+}
+.thm-stat-num {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--thm-green);
+}
+.thm-stat-lbl {
+  font-size: 10.5px;
+  color: var(--thm-text-muted);
+  text-transform: uppercase;
+}
+.thm-modal-btn {
+  background: var(--thm-green);
+  color: #0b101b;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.thm-modal-btn:hover {
+  background: var(--thm-green-hover);
+  box-shadow: 0 0 16px var(--thm-green-glow);
+}
+
+/* Confetti Canvas */
+#thm-confetti-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 210;
+}
+
+/* Footer */
+footer.thm-footer {
+  background: var(--thm-bg-alt);
+  border-top: 1px solid var(--thm-border);
+  padding: 22px 20px;
+  color: var(--thm-text-dim);
+  font-size: 13px;
+  margin-top: auto;
+}
+.thm-footer-inner {
+  max-width: 1380px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ========================================================
+   COMPREHENSIVE RESPONSIVENESS (ALL SCREEN SIZES)
+   ======================================================== */
+
+/* Large Tablets & Medium Laptops (< 1080px) */
+@media (max-width: 1080px) {
+  .thm-layout {
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 20px;
+  }
+  .thm-task-content-inner {
+    padding: 24px 26px;
+  }
+}
+
+/* Tablets (< 992px) */
+@media (max-width: 992px) {
+  .thm-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  aside.thm-sidebar {
+    display: none; /* Replaced by sticky mobile task pills */
+  }
+  .thm-mobile-task-nav {
+    display: flex;
+  }
+  .thm-task-card {
+    border-radius: 12px;
+  }
+}
+
+/* Phones & Small Tablets (< 768px) */
+@media (max-width: 768px) {
+  html {
+    scroll-padding-top: 155px;
+  }
+  .thm-container {
+    margin: 14px auto;
+    padding: 0 12px;
+  }
+  .thm-top-inner {
+    padding: 6px 12px;
+  }
+  .thm-progress-strip {
+    padding: 4px 12px 6px;
+  }
+  .thm-logo {
+    font-size: 16px;
+  }
+  .thm-logo svg {
+    width: 22px;
+    height: 22px;
+  }
+  .thm-room-title-crumb {
+    display: none;
+  }
+  .thm-btn {
+    padding: 5px 9px;
+    font-size: 11.5px;
+  }
+  .thm-task-header {
+    padding: 12px 14px;
+  }
+  .thm-task-title {
+    font-size: 15px;
+  }
+  .thm-task-content-inner {
+    padding: 16px 14px;
+  }
+  .thm-task-content-inner h2 {
+    font-size: 18px;
+    margin: 20px 0 10px;
+  }
+  .thm-task-content-inner h3 {
+    font-size: 15.5px;
+  }
+  .thm-questions-wrapper {
+    padding: 16px 14px;
+  }
+  .thm-question-card {
+    padding: 14px;
+  }
+  .thm-question-prompt {
+    font-size: 13px;
+  }
+  .thm-question-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .thm-input-field {
+    min-width: 0;
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+  .thm-btn-submit, .thm-btn-hint {
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+    font-size: 13px;
+  }
+  .thm-no-answer-bar {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 12px;
+    padding: 14px;
+  }
+  .thm-btn-complete {
+    width: 100%;
+    justify-content: center;
+    padding: 11px;
+  }
+  .ar {
+    font-size: 15px;
+    padding: 12px 14px;
+    line-height: 1.8;
+  }
+  .tw table {
+    font-size: 12.5px;
+  }
+  th, td {
+    padding: 8px 10px;
+  }
+  pre {
+    font-size: 12px;
+    padding: 12px 14px;
+  }
+  .thm-modal-box {
+    padding: 24px 18px;
+  }
+  .thm-modal-box h2 {
+    font-size: 20px;
+  }
+  .thm-modal-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .thm-footer-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+}
+
+/* Very Small Mobile Screens (< 380px) */
+@media (max-width: 380px) {
+  .thm-btn span {
+    font-size: 11px;
+  }
+  .thm-task-title {
+    font-size: 14px;
+  }
+  .thm-progress-labels {
+    font-size: 11px;
+  }
+}
+</style>
+</head>
+<body>
+
+<canvas id="thm-confetti-canvas"></canvas>
+
+<!-- ========================================================
+     STICKY HEADER & ROOM PROGRESS (SCROLLS WITH YOU CONSTANTLY)
+     ======================================================== -->
+<div class="thm-sticky-header-container">
+  <!-- Dynamic scroll reading line on bottom edge -->
+  <div id="thm-scroll-line"></div>
+
+  <!-- Top Navigation -->
+  <header class="thm-top-nav">
+    <div class="thm-top-inner">
+      <div class="thm-brand-col">
+        <a href="#" class="thm-logo" title="TryHackMe">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+          <span>TryHackMe<span class="thm-green-dot">.</span></span>
+        </a>
+        <span class="thm-room-badge">Room</span>
+        <div class="thm-room-title-crumb">
+          <span>/</span>
+          <span>rooms</span>
+          <span>/</span>
+          <strong>information-retrieval</strong>
+        </div>
+      </div>
+
+      <div class="thm-nav-controls">
+        <button class="thm-btn active" id="thm-toggle-arabic-btn" onclick="toggleArabicNotes()" title="Show/Hide Arabic notes">
+          <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+          <span>عربي</span>
+        </button>
+
+        <button class="thm-btn" id="thm-toggle-theme-btn" onclick="toggleTheme()" title="Switch Light/Dark theme">
+          <svg id="thm-theme-icon" style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+          <span id="thm-theme-label">Theme</span>
+        </button>
+
+        <button class="thm-btn thm-btn-reset" onclick="confirmResetProgress()" title="Reset Room Progress">
+          <svg style="width:14px;height:14px;fill:currentColor" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          <span>Reset</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sticky Room Progress Strip -->
+  <div class="thm-progress-strip">
+    <div class="thm-progress-inner">
+      <div class="thm-progress-labels">
+        <div class="thm-progress-pct">
+          <svg style="width:15px;height:15px;fill:var(--thm-green)" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          <span>Room progress: <span id="thm-progress-number">0%</span></span>
+        </div>
+        <div class="thm-progress-stats">
+          <span id="thm-tasks-stat">0 / 5 Tasks Complete</span>
+        </div>
+      </div>
+      <div class="thm-progress-bar-track">
+        <div class="thm-progress-bar-fill" id="thm-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Quick Task Scroller (<992px) -->
+  <nav class="thm-mobile-task-nav" id="thm-mobile-task-nav">
+    <button class="thm-mob-nav-btn active" id="mob-nav-1" onclick="jumpToTask(1)">
+      <span id="mob-icon-1">⏳</span> 1. Overview
+    </button>
+    <button class="thm-mob-nav-btn locked" id="mob-nav-2" onclick="jumpToTask(2)">
+      <span id="mob-icon-2">🔒</span> 2. What is IR
+    </button>
+    <button class="thm-mob-nav-btn locked" id="mob-nav-3" onclick="jumpToTask(3)">
+      <span id="mob-icon-3">🔒</span> 3. Boolean
+    </button>
+    <button class="thm-mob-nav-btn locked" id="mob-nav-4" onclick="jumpToTask(4)">
+      <span id="mob-icon-4">🔒</span> 4. Terms
+    </button>
+    <button class="thm-mob-nav-btn locked" id="mob-nav-5" onclick="jumpToTask(5)">
+      <span id="mob-icon-5">🔒</span> 5. Tolerant
+    </button>
+  </nav>
+</div>
+
+<!-- Main Container -->
+<div class="thm-container">
+  <div class="thm-layout">
+
+    <!-- Left Sticky Sidebar (Desktop >=992px) -->
+    <aside class="thm-sidebar">
+      <div class="thm-sidebar-card">
+        <h3>Room Details</h3>
+        <div class="thm-room-meta-list">
+          <div class="thm-meta-row">
+            <span class="thm-meta-label">Difficulty</span>
+            <span class="thm-badge-pill badge-medium">MEDIUM</span>
+          </div>
+          <div class="thm-meta-row">
+            <span class="thm-meta-label">Total Tasks</span>
+            <span class="thm-meta-val">5 Tasks</span>
+          </div>
+          <div class="thm-meta-row">
+            <span class="thm-meta-label">Est. Time</span>
+            <span class="thm-meta-val">~25 mins</span>
+          </div>
+          <div class="thm-meta-row">
+            <span class="thm-meta-label">Language</span>
+            <span class="thm-meta-val">EN + عربي</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="thm-sidebar-card">
+        <h3>Task Checklist</h3>
+        <nav class="thm-task-nav-list" id="thm-task-nav">
+          <a class="thm-task-nav-item active" id="nav-item-1" onclick="jumpToTask(1)">
+            <div class="thm-task-nav-left">
+              <span class="thm-nav-icon thm-status-icon-pending" id="nav-icon-1">⏳</span>
+              <span>1. Overview Notes</span>
+            </div>
+            <span class="thm-nav-status" id="nav-status-1">IN PROGRESS</span>
+          </a>
+          <a class="thm-task-nav-item locked" id="nav-item-2" onclick="jumpToTask(2)">
+            <div class="thm-task-nav-left">
+              <span class="thm-nav-icon thm-status-icon-locked" id="nav-icon-2">🔒</span>
+              <span>2. What is IR</span>
+            </div>
+            <span class="thm-nav-status" id="nav-status-2">LOCKED</span>
+          </a>
+          <a class="thm-task-nav-item locked" id="nav-item-3" onclick="jumpToTask(3)">
+            <div class="thm-task-nav-left">
+              <span class="thm-nav-icon thm-status-icon-locked" id="nav-icon-3">🔒</span>
+              <span>3. Boolean Retrieval</span>
+            </div>
+            <span class="thm-nav-status" id="nav-status-3">LOCKED</span>
+          </a>
+          <a class="thm-task-nav-item locked" id="nav-item-4" onclick="jumpToTask(4)">
+            <div class="thm-task-nav-left">
+              <span class="thm-nav-icon thm-status-icon-locked" id="nav-icon-4">🔒</span>
+              <span>4. Terms & Skip Ptrs</span>
+            </div>
+            <span class="thm-nav-status" id="nav-status-4">LOCKED</span>
+          </a>
+          <a class="thm-task-nav-item locked" id="nav-item-5" onclick="jumpToTask(5)">
+            <div class="thm-task-nav-left">
+              <span class="thm-nav-icon thm-status-icon-locked" id="nav-icon-5">🔒</span>
+              <span>5. Tolerant Retrieval</span>
+            </div>
+            <span class="thm-nav-status" id="nav-status-5">LOCKED</span>
+          </a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="thm-content">
+
+      <!-- ================= TASK 1 ================= -->
+      <section class="thm-task-card active-card" id="task-card-1" data-task="1">
+        <div class="thm-task-header" onclick="toggleTask(1)">
+          <div class="thm-task-header-left">
+            <span class="thm-task-num-badge">Task 1</span>
+            <h2 class="thm-task-title">Information Retrieval Notes (Overview)</h2>
+          </div>
+          <div class="thm-task-header-right">
+            <span class="thm-task-status-tag tag-active" id="task-1-status-tag">IN PROGRESS</span>
+            <svg class="thm-chevron-icon" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="thm-task-body-container" id="task-1-body">
+          <div class="thm-task-content-inner">
+<header class="hero">
+      <span class="kicker">ir · study notes</span>
+      <h1 class="title">information retrieval notes</h1>
+      <div class="meta">4 parts · boolean model to tolerant retrieval · english + <span class="arinl" dir="rtl" lang="ar">عربي</span> · <span id="rt">~25</span> min read</div>
+      <div class="tags"><span>boolean-retrieval</span><span>inverted-index</span><span>tokenization</span><span>stemming</span><span>skip-pointers</span><span>positional-index</span><span>wildcards</span><span>edit-distance</span><span>soundex</span></div>
+      <div class="actions"><button class="btn" id="cl" type="button">copy link</button><button class="btn" onclick="window.print()" type="button">print / save pdf</button></div>
+      <div class="tldr"><b class="l">tl;dr</b><p>four lectures, one flow: what ir is, then the boolean model and the inverted index, then how text becomes terms (and how to make merging faster), then how to survive wildcards and typos. english is the main text, arabic notes explain the ideas that need a second angle.</p></div>
+    </header>
+
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th>part</th>
+<th>topic</th>
+<th>source</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>what ir is, relevance, how a system works</td>
+<td>ir introduction</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>boolean retrieval, inverted index, merging, precision and recall</td>
+<td>chapter 2 (named "vector space", but the content is boolean retrieval)</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>tokenization, normalization, stemming, skip pointers, phrase queries</td>
+<td>lecture 3, dictionary</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>dictionary structures, wildcards, spelling correction, soundex</td>
+<td>lecture 4, tolerant retrieval</td>
+</tr>
+</tbody>
+</table></div>
+          </div>
+
+          <!-- Questions Container Task 1 -->
+          <div class="thm-questions-wrapper">
+            <div class="thm-questions-header-bar">
+              <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+              <h3 class="thm-questions-header-title">Answer the questions below</h3>
+            </div>
+
+            <p style="font-size: 14px; color: var(--thm-text-muted); margin-bottom: 16px;">
+              Read the overview and information retrieval notes above to begin the room.
+            </p>
+
+            <!-- Authentic THM "No answer needed" Bar (From user screenshot) -->
+            <div class="thm-no-answer-bar">
+              <div class="thm-badge-no-answer">
+                No answer needed
+              </div>
+
+              <!-- THM Mascot Icon in Center -->
+              <div class="thm-mascot-icon" title="TryHackMe Bot">
+                <svg viewBox="0 0 36 36"><ellipse cx="18" cy="18" rx="14" ry="13" fill="#21c35e"/><ellipse cx="18" cy="6" rx="2" ry="3" fill="#21c35e"/><rect x="17" y="7" width="2" height="4" fill="#1b9d4b"/><circle cx="13" cy="17" r="3.2" fill="#0b101b"/><circle cx="23" cy="17" r="3.2" fill="#0b101b"/><circle cx="14" cy="16" r="1.2" fill="#ffffff"/><circle cx="24" cy="16" r="1.2" fill="#ffffff"/></svg>
+              </div>
+
+              <button class="thm-btn-complete" id="task-1-complete-btn" onclick="completeTask1()">
+                <span id="task-1-complete-btn-text">Complete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TASK 2 ================= -->
+      <section class="thm-task-card is-locked" id="task-card-2" data-task="2">
+        <div class="thm-task-header" onclick="toggleTask(2)">
+          <div class="thm-task-header-left">
+            <span class="thm-task-num-badge">Task 2</span>
+            <h2 class="thm-task-title">Part 1 - What is Information Retrieval</h2>
+          </div>
+          <div class="thm-task-header-right">
+            <span class="thm-task-status-tag tag-locked" id="task-2-status-tag">LOCKED</span>
+            <svg class="thm-chevron-icon" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="thm-task-body-container" id="task-2-body">
+          <!-- Locked Overlay -->
+          <div class="thm-locked-overlay" id="task-2-locked-overlay">
+            <div class="thm-locked-box">
+              <svg class="thm-locked-icon-big" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+              <h4>Task 2 is Locked</h4>
+              <p>Complete Task 1 above by clicking "Complete" to unlock this module.</p>
+            </div>
+          </div>
+
+          <div class="thm-task-content-inner">
+<h2 id="part-1---what-is-information-retrieval">part 1 - what is information retrieval</h2>
+<h3 id="definition">definition</h3>
+<p><strong>information retrieval (ir)</strong> means finding material (usually documents) of an unstructured nature (usually text) that satisfies an <strong>information need</strong>, from inside a large collection.</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ ir يعني إنك تدور جوه كوم ضخم من النصوص غير المنظمة وتجيب اللي يحقق احتياجك من المعلومة، مش أي حاجة وخلاص</p></div>
+<h3 id="data-information-knowledge">data, information, knowledge</h3>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th>level</th>
+<th>meaning</th>
+<th>example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>data</td>
+<td>bare facts, no context</td>
+<td>a phone number</td>
+</tr>
+<tr class="even">
+<td>information</td>
+<td>data in context</td>
+<td>a phone book</td>
+</tr>
+<tr class="odd">
+<td>knowledge</td>
+<td>information you can act on</td>
+<td>knowing this number belongs to a client you call every week</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="ir-vs-databases">ir vs databases</h3>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th></th>
+<th>database</th>
+<th>ir</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>data</td>
+<td>structured, fixed format</td>
+<td>unstructured text</td>
+</tr>
+<tr class="even">
+<td>answer</td>
+<td>one right answer ("how much did you make last year")</td>
+<td>no single right answer ("documents about hippos in a zoo")</td>
+</tr>
+</tbody>
+</table></div>
+<p>converting all news, emails and web pages into tables is too hard at scale, so ir searches the text directly.</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>في الداتابيز الإجابة صح أو غلط، لكن في الـ ir الإجابة بتتقاس بمدى مناسبتها للمستخدم، وده معنى الـ relevance</p></div>
+<h3 id="relevance">relevance</h3>
+<p><strong>relevance</strong> = how well an answer fits <em>your</em> need. it depends on the user, time, place, group and context, so it is subjective. everything in ir is about getting it right.</p>
+<p>a system is judged by relevance, coverage, recency, speed, availability, usability, query syntax, and time to satisfy the request.</p>
+<h3 id="how-a-system-works">how a system works</h3>
+<pre><code>user&#39;s need -&gt; query text -&gt; parse query ----+
+                                             v
+collection -&gt; pre-process -&gt; index ----&gt; rank or match -&gt; results
+                                             |
+                          query reformulation (loop)</code></pre>
+<p>ir is <strong>iterative</strong>: search, read the results, rephrase, search again.</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ ir عملية متكررة: بتبحث، تشوف النتايج، تعدل السؤال، وتبحث تاني</p></div>
+<h3 id="quick-summary">quick summary</h3>
+<ul>
+<li>ir = unstructured text + an information need + relevance as the judge</li>
+<li>unlike databases, there is no single correct answer</li>
+<li>the loop: need → query → match/rank → reformulate</li>
+</ul>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الخلاصة: الـ ir بيدور في نصوص غير منظمة، والمعيار هو الـ relevance مش الصح والغلط، والبحث بيتكرر لحد ما المستخدم يوصل للي عايزه</p></div>
+          </div>
+
+          <!-- Questions Container Task 2 -->
+          <div class="thm-questions-wrapper">
+            <div class="thm-questions-header-bar">
+              <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+              <h3 class="thm-questions-header-title">Answer the questions below</h3>
+            </div>
+
+            <!-- Q 2.1 -->
+            <div class="thm-question-card" id="card-q-2-1">
+              <div class="thm-question-prompt">
+                <span class="thm-q-idx">1.</span>
+                <span>What is the subjective criterion that measures how well a retrieved result fits the user's information need?</span>
+              </div>
+              <div class="thm-question-row">
+                <input type="text" class="thm-input-field" id="input-q-2-1" placeholder="Answer format: *********" onkeydown="handleEnter(event, 2, 1)" autocomplete="off">
+                <button class="thm-btn-submit" id="btn-q-2-1" onclick="submitAnswer(2, 1)">Submit</button>
+                <button class="thm-btn-hint" onclick="toggleHint(2, 1)">💡 Hint</button>
+              </div>
+              <div class="thm-hint-text-box" id="hint-q-2-1">
+                <strong>Hint:</strong> It is defined in Part 1 as "how well an answer fits your need" and is subjective. Everything in IR is about getting it right.
+              </div>
+              <div class="thm-feedback-alert" id="feedback-q-2-1"></div>
+            </div>
+
+            <!-- Q 2.2 -->
+            <div class="thm-question-card" id="card-q-2-2">
+              <div class="thm-question-prompt">
+                <span class="thm-q-idx">2.</span>
+                <span>Because users search, inspect results, rephrase, and search again, IR is characterized as what kind of process?</span>
+              </div>
+              <div class="thm-question-row">
+                <input type="text" class="thm-input-field" id="input-q-2-2" placeholder="Answer format: *********" onkeydown="handleEnter(event, 2, 2)" autocomplete="off">
+                <button class="thm-btn-submit" id="btn-q-2-2" onclick="submitAnswer(2, 2)">Submit</button>
+                <button class="thm-btn-hint" onclick="toggleHint(2, 2)">💡 Hint</button>
+              </div>
+              <div class="thm-hint-text-box" id="hint-q-2-2">
+                <strong>Hint:</strong> Check the "how a system works" section: "ir is ________: search, read the results, rephrase, search again."
+              </div>
+              <div class="thm-feedback-alert" id="feedback-q-2-2"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TASK 3 ================= -->
+      <section class="thm-task-card is-locked" id="task-card-3" data-task="3">
+        <div class="thm-task-header" onclick="toggleTask(3)">
+          <div class="thm-task-header-left">
+            <span class="thm-task-num-badge">Task 3</span>
+            <h2 class="thm-task-title">Part 2 - Boolean Retrieval</h2>
+          </div>
+          <div class="thm-task-header-right">
+            <span class="thm-task-status-tag tag-locked" id="task-3-status-tag">LOCKED</span>
+            <svg class="thm-chevron-icon" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="thm-task-body-container" id="task-3-body">
+          <!-- Locked Overlay -->
+          <div class="thm-locked-overlay" id="task-3-locked-overlay">
+            <div class="thm-locked-box">
+              <svg class="thm-locked-icon-big" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+              <h4>Task 3 is Locked</h4>
+              <p>Answer both questions in Task 2 to unlock this module.</p>
+            </div>
+          </div>
+
+          <div class="thm-task-content-inner">
+<h2 id="part-2---boolean-retrieval">part 2 - boolean retrieval</h2>
+<h3 id="the-naive-way-grep">the naive way: grep</h3>
+<p>scan every document for every query. fine for small data, hopeless for big data (named after the unix <code>grep</code>).</p>
+<h3 id="term-document-incidence-matrix">term-document incidence matrix</h3>
+<p>question: which plays contain <code>brutus and caesar and not calpurnia</code>? record in advance, for each play, which words it contains. entry (t, d) = 1 if play d contains term t.</p>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th></th>
+<th>antony &amp; cleopatra</th>
+<th>julius caesar</th>
+<th>the tempest</th>
+<th>hamlet</th>
+<th>othello</th>
+<th>macbeth</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>antony</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>brutus</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>caesar</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>calpurnia</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>cleopatra</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>mercy</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>worser</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+</tbody>
+</table></div>
+<p>treat each row as a bit vector and apply the operators:</p>
+<pre><code>brutus           110100
+caesar           110111
+not calpurnia    101111      (calpurnia = 010000)
+and of all       100100  -&gt;  antony &amp; cleopatra, hamlet</code></pre>
+<p><strong>why it doesn't scale:</strong> 1 million docs and 500,000 distinct terms give half a trillion cells, but at most about a billion are 1s. the matrix is almost all zeros, so we store only the 1s, which is exactly an inverted index.</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>المصفوفة فيها أصفار كتير جدا، فبدل ما نخزن كل الخانات بنخزن بس الأماكن اللي فيها 1، وده هو الـ inverted index</p></div>
+<h3 id="vocabulary">vocabulary</h3>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th>term</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>boolean model</td>
+<td>queries are expressions with <code>and</code>, <code>or</code>, <code>not</code>; a doc matches or it doesn't</td>
+</tr>
+<tr class="even">
+<td>document</td>
+<td>whatever unit you index (a play, an email, a page)</td>
+</tr>
+<tr class="odd">
+<td>collection / corpus</td>
+<td>all the documents you search</td>
+</tr>
+<tr class="even">
+<td>information need vs query</td>
+<td>the need is the topic in the user's head; the query is what they type</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="precision-recall-accuracy">precision, recall, accuracy</h3>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th></th>
+<th>relevant</th>
+<th>non-relevant</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>retrieved</td>
+<td>a</td>
+<td>b</td>
+</tr>
+<tr class="even">
+<td>not retrieved</td>
+<td>c</td>
+<td>d</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>precision</strong> = a / (a+b): of what i returned, how much is useful</li>
+<li><strong>recall</strong> = a / (a+c): of everything useful, how much did i find</li>
+<li><strong>accuracy</strong> = (a+d) / (a+b+c+d): misleading for ir, because <code>d</code> is gigantic. if 10 docs in a million are relevant and the system returns nothing, accuracy is 99.999% and the system is useless</li>
+<li>f1 = 2pr / (p+r) merges precision and recall into one number</li>
+</ul>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ precision: اللي رجعته كام منه صح. الـ recall: من كل الصح الموجود كام لقيت. والـ accuracy مش مفيدة هنا لأن عدد الوثائق غير المهمة ضخم جدا</p></div>
+<h3 id="the-inverted-index">the inverted index</h3>
+<p>two parts:</p>
+<ul>
+<li><strong>dictionary</strong> (vocabulary): the terms, kept in memory</li>
+<li><strong>postings</strong>: for each term, the sorted list of docids containing it, kept on disk</li>
+</ul>
+<pre><code>brutus    -&gt; 1 2 4 11 31 45 173 174
+caesar    -&gt; 1 2 4 5 6 16 57 132
+calpurnia -&gt; 2 31 54 101</code></pre>
+<h3 id="building-it">building it</h3>
+<ol type="1">
+<li>collect documents, giving each a unique <strong>docid</strong> (1, 2, 3 ...)</li>
+<li><strong>tokenize</strong> into tokens</li>
+<li><strong>normalize</strong> tokens into terms (<code>friends</code> → <code>friend</code>)</li>
+<li>build the index: make (term, docid) pairs, <strong>sort</strong> by term then docid, merge repeats, split into dictionary and postings, and store the <strong>document frequency</strong> (df, number of docs containing the term)</li>
+</ol>
+<p>example: doc 1 = <code>i did enact julius caesar: i was killed i' the capitol; brutus killed me.</code> and doc 2 = <code>so let it be with caesar. the noble brutus hath told you caesar was ambitious:</code></p>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th>term</th>
+<th>df</th>
+<th>postings</th>
+<th>term</th>
+<th>df</th>
+<th>postings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ambitious</td>
+<td>1</td>
+<td>2</td>
+<td>julius</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>be</td>
+<td>1</td>
+<td>2</td>
+<td>killed</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>brutus</td>
+<td>2</td>
+<td>1, 2</td>
+<td>let</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td>capitol</td>
+<td>1</td>
+<td>1</td>
+<td>me</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>caesar</td>
+<td>2</td>
+<td>1, 2</td>
+<td>noble</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td>did</td>
+<td>1</td>
+<td>1</td>
+<td>so</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>enact</td>
+<td>1</td>
+<td>1</td>
+<td>the</td>
+<td>2</td>
+<td>1, 2</td>
+</tr>
+<tr class="even">
+<td>hath</td>
+<td>1</td>
+<td>2</td>
+<td>told</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>i</td>
+<td>1</td>
+<td>1</td>
+<td>you</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td>i'</td>
+<td>1</td>
+<td>1</td>
+<td>was</td>
+<td>2</td>
+<td>1, 2</td>
+</tr>
+<tr class="odd">
+<td>it</td>
+<td>1</td>
+<td>2</td>
+<td>with</td>
+<td>1</td>
+<td>2</td>
+</tr>
+</tbody>
+</table></div>
+<p>df speeds up query processing and later weights terms in ranked retrieval. postings can also hold term frequency and positions.</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>بنعمل أزواج (كلمة، رقم الوثيقة)، نرتبها أبجديا، نشيل التكرار، وبعدين نفصل القاموس عن قوائم الـ postings</p></div>
+<h3 id="processing-brutus-and-calpurnia">processing <code>brutus and calpurnia</code></h3>
+<p>look up each term, fetch its postings, <strong>intersect</strong>:</p>
+<pre><code>brutus    -&gt; 1, 2, 4, 11, 31, 45, 173, 174
+calpurnia -&gt; 2, 31, 54, 101
+result    -&gt; 2, 31</code></pre>
+<p>two pointers over two sorted lists, always advance the smaller one:</p>
+<pre><code>intersect(p1, p2)
+  answer = empty
+  while p1 != nil and p2 != nil
+    if docid(p1) == docid(p2)
+      add(answer, docid(p1)); p1 = next(p1); p2 = next(p2)
+    else if docid(p1) &lt; docid(p2)
+      p1 = next(p1)
+    else
+      p2 = next(p2)
+  return answer</code></pre>
+<p>cost for lists of length x and y is <code>o(x + y)</code>, since each pointer only moves forward. that is why postings must be sorted.</p>
+<p>for <code>a and b and c</code>, intersect <strong>smallest df first</strong>: the result can never be bigger than the smallest list, so later steps are cheaper.</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>بنمشي على القائمتين مع بعض: لو الرقمين متساويين نسجله، وإلا نحرك المؤشر الأصغر. عشان كده لازم القوائم تكون مرتبة</p></div>
+<h3 id="boolean-vs-ranked-retrieval">boolean vs ranked retrieval</h3>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th></th>
+<th>boolean</th>
+<th>ranked</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>match</td>
+<td>exact, yes or no</td>
+<td>score per doc</td>
+</tr>
+<tr class="even">
+<td>query</td>
+<td>boolean expression, needs skill</td>
+<td>free text</td>
+</tr>
+<tr class="odd">
+<td>result size</td>
+<td>feast or famine: thousands or zero</td>
+<td>top-k best</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>extended boolean</strong> adds proximity, wildcards and similar operators. boolean was the main commercial tool for about 3 decades and survives in email search, library catalogs, mac spotlight and westlaw (legal search since 1975, ranking added 1992, most of its 700,000 users still use boolean).</p>
+<h3 id="exercises-solved">exercises solved</h3>
+<p><strong>ex 1.1</strong> docs: (1) new home sales top forecasts (2) home sales rise in july (3) increase in home sales in july (4) july new home sales rise</p>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th>term</th>
+<th>postings</th>
+<th>term</th>
+<th>postings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>forecasts</td>
+<td>1</td>
+<td>new</td>
+<td>1, 4</td>
+</tr>
+<tr class="even">
+<td>home</td>
+<td>1, 2, 3, 4</td>
+<td>rise</td>
+<td>2, 4</td>
+</tr>
+<tr class="odd">
+<td>in</td>
+<td>2, 3</td>
+<td>sales</td>
+<td>1, 2, 3, 4</td>
+</tr>
+<tr class="even">
+<td>increase</td>
+<td>3</td>
+<td>top</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>july</td>
+<td>2, 3, 4</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>ex 1.2 / 1.3</strong> docs: (1) breakthrough drug for schizophrenia (2) new schizophrenia drug (3) new approach for treatment of schizophrenia (4) new hopes for schizophrenia patients</p>
+<ul>
+<li>incidence matrix rows (docs 1-4): breakthrough 1000, drug 1100, for 1011, schizophrenia 1111, new 0111, approach 0010, treatment 0010, of 0010, hopes 0001, patients 0001</li>
+<li><code>schizophrenia and drug</code> → schizophrenia = {1,2,3,4}, drug = {1,2} → <strong>docs 1, 2</strong></li>
+<li><code>for and not (drug or approach)</code> → for = {1,3,4}; drug or approach = {1,2,3}; so {1,3,4} minus {1,2,3} = <strong>doc 4</strong></li>
+</ul>
+<h3 id="quick-summary-1">quick summary</h3>
+<ul>
+<li>incidence matrix = correct but huge and sparse → inverted index = dictionary + sorted postings</li>
+<li>build: tokenize, normalize, sort (term, docid), group, store df</li>
+<li><code>and</code> = intersect two sorted lists in <code>o(x+y)</code>; start with the shortest list</li>
+<li>precision = a/(a+b), recall = a/(a+c), accuracy is useless for ir</li>
+<li>boolean = exact match, no ranking; ranked = scores and top-k</li>
+</ul>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الخلاصة: الـ inverted index هو قاموس + قوائم مرتبة، الـ and معناه intersect بتكلفة خطية، وبنبدأ بأقصر قائمة. وفي التقييم بنستخدم precision و recall مش accuracy</p></div>
+          </div>
+
+          <!-- Questions Container Task 3 -->
+          <div class="thm-questions-wrapper">
+            <div class="thm-questions-header-bar">
+              <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+              <h3 class="thm-questions-header-title">Answer the questions below</h3>
+            </div>
+
+            <!-- Q 3.1 -->
+            <div class="thm-question-card" id="card-q-3-1">
+              <div class="thm-question-prompt">
+                <span class="thm-q-idx">1.</span>
+                <span>What evaluation metric is misleading and useless for IR because the number of non-relevant unretrieved documents (d) is overwhelmingly large?</span>
+              </div>
+              <div class="thm-question-row">
+                <input type="text" class="thm-input-field" id="input-q-3-1" placeholder="Answer format: ********" onkeydown="handleEnter(event, 3, 1)" autocomplete="off">
+                <button class="thm-btn-submit" id="btn-q-3-1" onclick="submitAnswer(3, 1)">Submit</button>
+                <button class="thm-btn-hint" onclick="toggleHint(3, 1)">💡 Hint</button>
+              </div>
+              <div class="thm-hint-text-box" id="hint-q-3-1">
+                <strong>Hint:</strong> It calculates (a+d) / (a+b+c+d). If 10 docs in a million are relevant and nothing is returned, it yields 99.999%.
+              </div>
+              <div class="thm-feedback-alert" id="feedback-q-3-1"></div>
+            </div>
+
+            <!-- Q 3.2 -->
+            <div class="thm-question-card" id="card-q-3-2">
+              <div class="thm-question-prompt">
+                <span class="thm-q-idx">2.</span>
+                <span>In an inverted index, what do we call the sorted list of document IDs (docIDs) that contain a specific term?</span>
+              </div>
+              <div class="thm-question-row">
+                <input type="text" class="thm-input-field" id="input-q-3-2" placeholder="Answer format: ********" onkeydown="handleEnter(event, 3, 2)" autocomplete="off">
+                <button class="thm-btn-submit" id="btn-q-3-2" onclick="submitAnswer(3, 2)">Submit</button>
+                <button class="thm-btn-hint" onclick="toggleHint(3, 2)">💡 Hint</button>
+              </div>
+              <div class="thm-hint-text-box" id="hint-q-3-2">
+                <strong>Hint:</strong> An inverted index consists of two parts: the dictionary (in memory) and the ________ (on disk).
+              </div>
+              <div class="thm-feedback-alert" id="feedback-q-3-2"></div>
+            </div>
+
+            <!-- Q 3.3 -->
+            <div class="thm-question-card" id="card-q-3-3">
+              <div class="thm-question-prompt">
+                <span class="thm-q-idx">3.</span>
+                <span>When evaluating a multi-term AND query (such as a and b and c), which postings list should you intersect first?</span>
+              </div>
+              <div class="thm-question-row">
+                <input type="text" class="thm-input-field" id="input-q-3-3" placeholder="Answer format: *********** **" onkeydown="handleEnter(event, 3, 3)" autocomplete="off">
+                <button class="thm-btn-submit" id="btn-q-3-3" onclick="submitAnswer(3, 3)">Submit</button>
+                <button class="thm-btn-hint" onclick="toggleHint(3, 3)">💡 Hint</button>
+              </div>
+              <div class="thm-hint-text-box" id="hint-q-3-3">
+                <strong>Hint:</strong> Intersect terms with the smallest document frequency (smallest df) first because later steps will be cheaper.
+              </div>
+              <div class="thm-feedback-alert" id="feedback-q-3-3"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TASK 4 ================= -->
+      <section class="thm-task-card is-locked" id="task-card-4" data-task="4">
+        <div class="thm-task-header" onclick="toggleTask(4)">
+          <div class="thm-task-header-left">
+            <span class="thm-task-num-badge">Task 4</span>
+            <h2 class="thm-task-title">Part 3 - Terms, Tokens, Normalization and Faster Postings</h2>
+          </div>
+          <div class="thm-task-header-right">
+            <span class="thm-task-status-tag tag-locked" id="task-4-status-tag">LOCKED</span>
+            <svg class="thm-chevron-icon" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="thm-task-body-container" id="task-4-body">
+          <!-- Locked Overlay -->
+          <div class="thm-locked-overlay" id="task-4-locked-overlay">
+            <div class="thm-locked-box">
+              <svg class="thm-locked-icon-big" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+              <h4>Task 4 is Locked</h4>
+              <p>Answer all 3 questions in Task 3 to unlock this module.</p>
+            </div>
+          </div>
+
+          <div class="thm-task-content-inner">
+<h2 id="part-3---terms-tokens-normalization-and-faster-postings">part 3 - terms, tokens, normalization and faster postings</h2>
+<h3 id="the-pipeline">the pipeline</h3>
+<pre><code>documents -&gt; tokenizer -&gt; tokens -&gt; linguistic modules -&gt; terms -&gt; indexer -&gt; inverted index
+&quot;friends, romans, countrymen&quot;  friends romans countrymen   friend roman countryman</code></pre>
+<h3 id="parsing-a-document">parsing a document</h3>
+<p>first decide the <strong>format</strong> (pdf, word, html), the <strong>language</strong> and the <strong>character set</strong> (cp1252, utf-8). these are classification problems, usually solved with heuristics or libraries. one index can hold many languages, and one document can mix them (a french email with a german pdf).</p>
+<p><strong>what is a document?</strong> a grain-size choice: a file, one email inside an mbox file, an email with 5 attachments, or a group of files (a ppt, or latex split across html pages).</p>
+<h3 id="tokenization">tokenization</h3>
+<p>a <strong>token</strong> is an instance of a sequence of characters. <code>"friends, romans and countrymen"</code> → <code>friends</code>, <code>romans</code>, <code>countrymen</code>. the hard part is deciding what counts as one token:</p>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th>problem</th>
+<th>examples</th>
+<th>dilemma</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>apostrophes</td>
+<td><code>finland's capital</code></td>
+<td><code>finland</code> + <code>s</code>, <code>finlands</code>, or <code>finland's</code>?</td>
+</tr>
+<tr class="even">
+<td>hyphens</td>
+<td><code>hewlett-packard</code>, <code>state-of-the-art</code>, <code>lower-case</code></td>
+<td>split or keep? asking users to type hyphens helps</td>
+</tr>
+<tr class="odd">
+<td>multiword names</td>
+<td><code>san francisco</code></td>
+<td>one token or two?</td>
+</tr>
+<tr class="even">
+<td>numbers, dates</td>
+<td><code>3/20/91</code>, <code>20/3/91</code>, <code>55 b.c.</code>, <code>b-52</code>, <code>(800) 234-2333</code></td>
+<td>embedded spaces; useful for error codes and stack traces (n-grams help); metadata is indexed separately</td>
+</tr>
+</tbody>
+</table></div>
+<p>language issues:</p>
+<ul>
+<li><strong>french</strong>: <code>l'ensemble</code> → <code>l</code>, <code>l'</code>, <code>le</code>? it should match <code>un ensemble</code> (google failed until at least 2003)</li>
+<li><strong>german</strong>: compounds are not split (<code>lebensversicherungsgesellschaftsangestellter</code> = life insurance company employee); a <strong>compound splitter</strong> gives about 15% improvement</li>
+<li><strong>chinese, japanese</strong>: no spaces between words, so tokenization is not unique; japanese also mixes katakana, hiragana, kanji and romaji</li>
+<li><strong>arabic, hebrew</strong>: right to left, but numbers go left to right; letters connect and change shape. in unicode the stored form is simple even though the display is complex</li>
+</ul>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ tokenization يعني تقطيع النص لوحدات. المشكلة إن اللغات مختلفة: الفرنسي بيستخدم الأبوستروف، الألماني بيلزق كلمات، والصيني ما فيهوش مسافات. في العربي الكتابة من اليمين لليسار والأرقام من اليسار لليمين</p></div>
+<p>arabic search in practice (extra, standard): drop diacritics (tashkeel), unify alef forms (<span class="arinl" dir="rtl" lang="ar">أ إ آ</span> → <span class="arinl" dir="rtl" lang="ar">ا</span>), map <span class="arinl" dir="rtl" lang="ar">ى</span> → <span class="arinl" dir="rtl" lang="ar">ي</span> and <span class="arinl" dir="rtl" lang="ar">ة</span> → <span class="arinl" dir="rtl" lang="ar">ه</span>, remove tatweel (<span class="arinl" dir="rtl" lang="ar">ـ</span>), and use a light stemmer for prefixes like <span class="arinl" dir="rtl" lang="ar">ال</span> and suffixes like <span class="arinl" dir="rtl" lang="ar">ات</span> / <span class="arinl" dir="rtl" lang="ar">ون</span>.</p>
+<h3 id="normalization-to-terms">normalization to terms</h3>
+<p>a <strong>term</strong> is a normalized word type, an entry in the dictionary. normalize the indexed text and the query <strong>in exactly the same way</strong>, or they will never meet.</p>
+<ul>
+<li>delete periods: <code>u.s.a.</code>, <code>usa</code> → <code>usa</code></li>
+<li>delete hyphens: <code>anti-discriminatory</code> → <code>antidiscriminatory</code></li>
+<li>accents and umlauts: <code>résumé</code> ~ <code>resume</code>, <code>tübingen</code> ~ <code>tuebingen</code> ~ <code>tubingen</code>. rule: ask how your users actually type; they often skip accents, so de-accenting usually wins</li>
+<li>dates: <code>7月30日</code> ~ <code>7/30</code></li>
+<li>normalization depends on language (is <code>mit</code> the german word or the university?), so it is tied to language detection</li>
+<li><strong>case folding</strong>: lowercase everything. exceptions exist (<code>general motors</code>, <code>fed</code> the central bank vs <code>fed</code> the verb, <code>sail</code> the lab vs the verb) but users type lowercase anyway. google example (fixed in 2011): <code>c.a.t.</code> returned lolcats before caterpillar</li>
+</ul>
+<p><strong>asymmetric expansion</strong> is the alternative to equivalence classes: the query expands depending on what was typed. more powerful, less efficient.</p>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th>user types</th>
+<th>system searches</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>window</td>
+<td>window, windows</td>
+</tr>
+<tr class="even">
+<td>windows</td>
+<td>windows, windows (capital w), window</td>
+</tr>
+<tr class="odd">
+<td>windows (capital w)</td>
+<td>windows (capital w) only</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>synonyms:</strong> <code>car</code> = <code>automobile</code>, <code>color</code> = <code>colour</code>, handled either at index time (index under <code>car-automobile</code>) or at query time (expand the query). <strong>spelling mistakes</strong> are handled by soundex and spell correction (part 4).</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ normalization يعني نوحد الأشكال المختلفة للكلمة (حروف كبيرة وصغيرة، نقط، شرطات، تشكيل) عشان الكلمة في الوثيقة والكلمة في الاستعلام يبقوا شكل واحد</p></div>
+<h3 id="stop-words">stop words</h3>
+<p>a stop list removes the most common words (<code>the, a, and, to, be</code>): they carry little meaning, and the top 30 words make about 30% of all postings. but modern systems mostly <strong>keep</strong> them:</p>
+<ul>
+<li>compression makes their space cost tiny, and query optimization makes the time cost small</li>
+<li>you need them for phrases (<code>king of denmark</code>), titles (<code>let it be</code>, <code>to be or not to be</code>) and relational queries (<code>flights to london</code>)</li>
+</ul>
+<h3 id="lemmatization-vs-stemming">lemmatization vs stemming</h3>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th></th>
+<th>lemmatization</th>
+<th>stemming</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>idea</td>
+<td>proper reduction to the dictionary headword</td>
+<td>crude chopping of affixes</td>
+</tr>
+<tr class="even">
+<td>examples</td>
+<td><code>am, are, is → be</code>; <code>car, cars, car's → car</code></td>
+<td><code>automate, automatic, automation → automat</code></td>
+</tr>
+<tr class="odd">
+<td>sentence</td>
+<td><code>the boy's cars are different colors → the boy car be different color</code></td>
+<td><code>compressed and compression are both accepted as equivalent to compress → compress and compress are both accept as equival to compress</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>porter's algorithm</strong>, the most common english stemmer: 5 phases applied in order; inside a phase, the rule matching the <strong>longest suffix</strong> wins.</p>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th>rule</th>
+<th>example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>sses → ss</td>
+<td>caresses → caress</td>
+</tr>
+<tr class="even">
+<td>ies → i</td>
+<td>ponies → poni</td>
+</tr>
+<tr class="odd">
+<td>ss → ss</td>
+<td>caress → caress</td>
+</tr>
+<tr class="even">
+<td>s → (nothing)</td>
+<td>cats → cat</td>
+</tr>
+<tr class="odd">
+<td>ational → ate, tional → tion</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>(m&gt;1) ement → (nothing)</td>
+<td>replacement → replac, but cement stays cement</td>
+</tr>
+</tbody>
+</table></div>
+<p>the <strong>measure m</strong> roughly counts syllables, so a rule fires only when the word is long enough for the ending to be a real suffix. other stemmers: lovins (single pass, about 250 rules), paice/husk, snowball.</p>
+<p><strong>does it help?</strong> english: mixed, recall goes up for some queries but precision drops for others (<code>operative</code> in dentistry → <code>oper</code>). spanish, german, finnish: clearly useful (about 30% gain for finnish). full lemmatization gives at most modest retrieval gains. all of this is language-specific, often application-specific, and added as plug-ins.</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ stemming بيقص اللواحق بشكل خشن (compressed و compression يبقوا compress)، فبيرفع الـ recall بس ممكن يوطي الـ precision. أما الـ lemmatization فبيرجع الكلمة لأصلها في القاموس بشكل صحيح (are و is يبقوا be)</p></div>
+<h3 id="skip-pointers-faster-and">skip pointers (faster <code>and</code>)</h3>
+<p>the basic merge costs <code>o(m + n)</code>. if the index doesn't change too fast, add <strong>skip pointers at indexing time</strong> to jump over postings that cannot match.</p>
+<pre><code>brutus:  2 -&gt; 4 -&gt; 8 -&gt; 41 -&gt; 48 -&gt; 64 -&gt; 128       skips: 2→41, 41→128
+caesar:  1 -&gt; 2 -&gt; 3 -&gt; 8 -&gt; 11 -&gt; 17 -&gt; 21 -&gt; 31    skips: 1→11, 11→31</code></pre>
+<p>after matching 8 we compare 41 and 11. 11 is smaller, so try its skip: the rule is <em>follow a skip only if its target is ≤ the other pointer's value</em>. 31 ≤ 41, so jump 11 → 31 and skip 17 and 21 for free.</p>
+<p>in the algorithm (figure 2.10), when <code>docid(p1) &lt; docid(p2)</code> you check <code>hasskip(p1)</code> and <code>docid(skip(p1)) &lt;= docid(p2)</code>, keep skipping while true, otherwise step with <code>next</code>; same for p2. second example: brutus 2 4 8 16 19 23 28 43 (skips 2→16, 16→28, 28→72) against caesar ... 8 41 51 ...; at 16 vs 41, skip(16) = 28 ≤ 41 so jump (19 and 23 are avoided); skip(28) = 72 &gt; 41, stop.</p>
+<p>rules of thumb:</p>
+<ul>
+<li>skips exist only on original postings lists; intermediate results have none (<code>hasskip()</code> is false)</li>
+<li>they help <code>and</code>, not <code>or</code></li>
+<li><strong>where to put them:</strong> more skips = short jumps that often succeed but many comparisons; fewer skips = few comparisons but long jumps that rarely succeed. standard heuristic: <strong>√l evenly spaced skips</strong> for a list of length l (moffat and zobel 1996). it ignores query distribution and is harder when the index updates often</li>
+<li>on modern hardware it helps only if the index is in memory; reading a bigger list from disk can cost more than it saves (bahle et al. 2002)</li>
+</ul>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ skip pointers هي قفزات جاهزة جوه الـ postings بتخليك تتخطى أرقام مستحيل تكون في النتيجة. بتفيد الـ and بس، والعدد المثالي تقريبا الجذر التربيعي لطول القائمة</p></div>
+<h3 id="phrase-queries">phrase queries</h3>
+<p>users want <code>"stanford university"</code> as a phrase, so "the inventor stanford ovshinsky never went to university" must not match. about 10% of web queries are phrase queries, and many more are implicit (person names).</p>
+<p><strong>1. biword index:</strong> every pair of consecutive terms becomes a dictionary term. <code>friends romans countrymen</code> → <code>friends romans</code>, <code>romans countrymen</code>. two-word phrases become a simple lookup. weaknesses: longer phrases need an <code>and</code> of biwords, which can give false positives (<code>stanford university</code> and <code>university palo</code> and <code>palo alto</code>), and the dictionary explodes.</p>
+<p><strong>2. positional index:</strong> for each term and doc, store the <strong>positions</strong>: <code>term: doc: &lt;pos, pos...&gt;; doc: &lt;...&gt;</code>.</p>
+<pre><code>ismailia:   &lt;1: 1,5,9&gt;   &lt;4: 4,8,10,12,15&gt;
+university: &lt;1: 4,8,13&gt;</code></pre>
+<p>query <code>"university ismailia"</code>: only doc 1 has both words. check ismailia at position of university + 1: university at 4 → ismailia at 5 ✓; at 8 → 9 ✓; at 13 → 14 ✗. doc 1 matches. <code>"ismailia university"</code> matches nothing. longer phrases check +1, +2, ... from the first word.</p>
+<p>it also supports <strong>proximity</strong>: <code>gates /k microsoft</code> = within k words, either side (k = 1 means adjacent). cost: a positional index is typically 2 to 4 times bigger.</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ positional index بيخزن مكان كل كلمة جوه الوثيقة، فنعرف إن الكلمتين جنب بعض وبالترتيب. ثمنه إن الفهرس بيكبر من ضعفين لأربعة أضعاف</p></div>
+<p><strong>ex 2.10</strong> gates: 1:⟨3⟩; 2:⟨6⟩; 3:⟨2,17⟩; 4:⟨1⟩ · microsoft: 1:⟨1⟩; 2:⟨1,21⟩; 3:⟨3⟩; 5:⟨16,22,51⟩</p>
+<ul>
+<li><code>gates /2 microsoft</code>: doc 1 (3 vs 1, distance 2 ✓), doc 2 (distances 5 and 15 ✗), doc 3 (2 vs 3, distance 1 ✓) → <strong>{1, 3}</strong></li>
+<li>smallest distances: doc 3 = 1, doc 1 = 2, doc 2 = 5, so the answer changes in three ranges: <code>k = 1</code> → {3}; <code>k = 2, 3, 4</code> → {1, 3}; <code>k ≥ 5</code> → {1, 2, 3}</li>
+</ul>
+<h3 id="quick-summary-2">quick summary</h3>
+<ul>
+<li>pipeline: parse → tokenize → normalize (case, accents, periods, hyphens) → index</li>
+<li>stop words are usually kept; stemming helps recall but can hurt precision, strongest for morphologically rich languages</li>
+<li>skip pointers: √l spacing, <code>and</code> only, original lists only</li>
+<li>phrases: biword index (simple, false positives) or positional index (exact, supports <code>/k</code>, bigger)</li>
+</ul>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الخلاصة: قبل الفهرسة نقطع النص ونوحد الكلمات، وغالبا بنحتفظ بالـ stop words عشان العبارات. للـ and السريع نستخدم skip pointers، وللعبارات نستخدم positional index</p></div>
+          </div>
+
+          <!-- Questions Container Task 4 -->
+          <div class="thm-questions-wrapper">
+            <div class="thm-questions-header-bar">
+              <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+              <h3 class="thm-questions-header-title">Answer the questions below</h3>
+            </div>
+
+            <!-- Q 4.1 -->
+            <div class="thm-question-card" id="card-q-4-1">
+              <div class="thm-question-prompt">
+                <span class="thm-q-idx">1.</span>
+                <span>According to Moffat and Zobel (1996), what standard heuristic gives the number of evenly spaced skip pointers for a postings list of length L?</span>
+              </div>
+              <div class="thm-question-row">
+                <input type="text" class="thm-input-field" id="input-q-4-1" placeholder="Answer format: **** (e.g. sqrt(l))" onkeydown="handleEnter(event, 4, 1)" autocomplete="off">
+                <button class="thm-btn-submit" id="btn-q-4-1" onclick="submitAnswer(4, 1)">Submit</button>
+                <button class="thm-btn-hint" onclick="toggleHint(4, 1)">💡 Hint</button>
+              </div>
+              <div class="thm-hint-text-box" id="hint-q-4-1">
+                <strong>Hint:</strong> It uses the square root of list length L. You can type "sqrt(l)" or "√l".
+              </div>
+              <div class="thm-feedback-alert" id="feedback-q-4-1"></div>
+            </div>
+
+            <!-- Q 4.2 -->
+            <div class="thm-question-card" id="card-q-4-2">
+              <div class="thm-question-prompt">
+                <span class="thm-q-idx">2.</span>
+                <span>What is the name of the most common 5-phase algorithmic stemmer for English?</span>
+              </div>
+              <div class="thm-question-row">
+                <input type="text" class="thm-input-field" id="input-q-4-2" placeholder="Answer format: ******" onkeydown="handleEnter(event, 4, 2)" autocomplete="off">
+                <button class="thm-btn-submit" id="btn-q-4-2" onclick="submitAnswer(4, 2)">Submit</button>
+                <button class="thm-btn-hint" onclick="toggleHint(4, 2)">💡 Hint</button>
+              </div>
+              <div class="thm-hint-text-box" id="hint-q-4-2">
+                <strong>Hint:</strong> Named after Martin Porter: 5 phases applied in order; inside a phase, the rule matching the longest suffix wins.
+              </div>
+              <div class="thm-feedback-alert" id="feedback-q-4-2"></div>
+            </div>
+
+            <!-- Q 4.3 -->
+            <div class="thm-question-card" id="card-q-4-3">
+              <div class="thm-question-prompt">
+                <span class="thm-q-idx">3.</span>
+                <span>What type of index stores the exact positions of each term within a document to support phrase and proximity (/k) queries?</span>
+              </div>
+              <div class="thm-question-row">
+                <input type="text" class="thm-input-field" id="input-q-4-3" placeholder="Answer format: ********** *****" onkeydown="handleEnter(event, 4, 3)" autocomplete="off">
+                <button class="thm-btn-submit" id="btn-q-4-3" onclick="submitAnswer(4, 3)">Submit</button>
+                <button class="thm-btn-hint" onclick="toggleHint(4, 3)">💡 Hint</button>
+              </div>
+              <div class="thm-hint-text-box" id="hint-q-4-3">
+                <strong>Hint:</strong> For each term and doc, it stores the positions: term: doc: &lt;pos, pos...&gt;.
+              </div>
+              <div class="thm-feedback-alert" id="feedback-q-4-3"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TASK 5 ================= -->
+      <section class="thm-task-card is-locked" id="task-card-5" data-task="5">
+        <div class="thm-task-header" onclick="toggleTask(5)">
+          <div class="thm-task-header-left">
+            <span class="thm-task-num-badge">Task 5</span>
+            <h2 class="thm-task-title">Part 4 - Dictionaries and Tolerant Retrieval</h2>
+          </div>
+          <div class="thm-task-header-right">
+            <span class="thm-task-status-tag tag-locked" id="task-5-status-tag">LOCKED</span>
+            <svg class="thm-chevron-icon" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="thm-task-body-container" id="task-5-body">
+          <!-- Locked Overlay -->
+          <div class="thm-locked-overlay" id="task-5-locked-overlay">
+            <div class="thm-locked-box">
+              <svg class="thm-locked-icon-big" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+              <h4>Task 5 is Locked</h4>
+              <p>Answer all 3 questions in Task 4 to unlock this final module.</p>
+            </div>
+          </div>
+
+          <div class="thm-task-content-inner">
+<h2 id="part-4---dictionaries-and-tolerant-retrieval">part 4 - dictionaries and tolerant retrieval</h2>
+<p>"tolerant" means the search still works when the query is partial or misspelled.</p>
+<h3 id="dictionary-data-structures">dictionary data structures</h3>
+<p>the dictionary stores the vocabulary, df and pointers to postings. a naive version is an array of structs: <code>char[20]</code> (20 bytes) + df (4/8 bytes) + postings pointer (4/8 bytes). two questions: how to store it compactly, and how to look up fast.</p>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th></th>
+<th>hashtable</th>
+<th>tree</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>lookup</td>
+<td><code>o(1)</code></td>
+<td><code>o(log m)</code>, needs a balanced tree</td>
+</tr>
+<tr class="even">
+<td>good at</td>
+<td>fastest exact match</td>
+<td><strong>prefix search</strong> (all terms starting with <code>hyp</code>)</td>
+</tr>
+<tr class="odd">
+<td>bad at</td>
+<td>no variants (<code>judgment</code> / <code>judgement</code>), no prefix search, rehash everything when the vocabulary grows</td>
+<td>slower; rebalancing binary trees is expensive</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>binary tree:</strong> root splits <code>a-m</code> / <code>n-z</code>, then <code>a-hu</code> / <code>hy-m</code>, <code>n-sh</code> / <code>si-z</code></li>
+<li><strong>b-tree:</strong> each internal node has between a and b children (for example [2,4]); this fixes the rebalancing problem and is the usual choice</li>
+<li>trees need an ordering of characters, which we have</li>
+</ul>
+<h3 id="wildcard-queries">wildcard queries</h3>
+<p>people use <code>*</code> when: they are unsure of a spelling; they know several spellings (<code>color</code>/<code>colour</code>); they want stemming-like variants without knowing if the engine stems (<code>judicia*</code> catches judicial, judiciary); or they are unsure of a foreign word (<code>universit* stuttgart</code>). <code>*</code> means any string, possibly empty.</p>
+<ul>
+<li><strong>trailing</strong> <code>mon*</code>: easy in a b-tree, take the range <code>mon ≤ w &lt; moo</code></li>
+<li><strong>leading</strong> <code>*mon</code>: keep a <strong>second b-tree of reversed terms</strong>, search <code>nom*</code> as the range <code>nom ≤ w &lt; non</code></li>
+<li><strong>both ends</strong> <code>pro*cent</code>: get <code>pro*</code> from the normal tree and <code>*cent</code> from the reversed tree, <strong>intersect the two term sets</strong> (works, but costly)</li>
+</ul>
+<p>after getting the matching terms you still look up each one's postings, so <code>se*ate and fil*er</code> becomes a large <code>or</code> followed by <code>and</code>; a query like <code>*a*e*i*o*u*</code> is brutal. if a search box encourages wildcards, people will use them.</p>
+<h4 id="permuterm-index">permuterm index</h4>
+<p>rotate so the <code>*</code> always ends up at the end. add a marker <code>$</code> at the end of the word and index <strong>every rotation</strong>. for <code>hello</code>: <code>hello$</code>, <code>ello$h</code>, <code>llo$he</code>, <code>lo$hel</code>, <code>o$hell</code>, <code>$hello</code>.</p>
+<div class="tw"><table>
+<thead>
+<tr class="header">
+<th>query</th>
+<th>look up</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>x</code></td>
+<td><code>x$</code></td>
+</tr>
+<tr class="even">
+<td><code>x*</code></td>
+<td><code>$x*</code></td>
+</tr>
+<tr class="odd">
+<td><code>*x</code></td>
+<td><code>x$*</code></td>
+</tr>
+<tr class="even">
+<td><code>*x*</code></td>
+<td><code>x*</code></td>
+</tr>
+<tr class="odd">
+<td><code>x*y</code></td>
+<td><code>y$x*</code></td>
+</tr>
+<tr class="even">
+<td><code>x*y*z</code></td>
+<td><code>z$x*</code>, then filter the results for <code>y</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>example: <code>hel*o</code> → x = hel, y = o → look up <code>o$hel*</code> → finds <code>hello</code>. cost: the lexicon becomes about <strong>4 times</strong> bigger (empirical, english).</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ permuterm بيدور الكلمة بكل الطرق الممكنة مع علامة $ عشان أي نجمة تتحول لآخر الكلمة ونستخدم b-tree عادي. عيبه إن القاموس بيكبر حوالي 4 مرات</p></div>
+<h4 id="k-gram-bigram-index">k-gram (bigram) index</h4>
+<p>list all <strong>k-grams</strong> (sequences of k characters) of every term, with <code>$</code> marking word boundaries. for <code>april is the cruelest month</code> the bigrams are <code>$a ap pr ri il l$ $i is s$ $t th he e$ $c cr ru ue el le es st t$ $m mo on nt h$</code>. keep a <strong>second inverted index</strong> from each bigram to the dictionary <strong>terms</strong> containing it (not documents):</p>
+<pre><code>$m -&gt; mace, madden, ...
+mo -&gt; among, amortize, ...
+on -&gt; along, among, ...</code></pre>
+<p><code>mon*</code> becomes <code>$m and mo and on</code>. that also returns <code>moon</code> (it has all three), so <strong>post-filter</strong> the terms against the original pattern, then look up the survivors in the normal index. smaller and faster than permuterm, but every surviving term still costs a boolean query.</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ k-gram index بيفهرس أجزاء الكلمة (حرفين أو ثلاثة) ويقول أنهي كلمات فيها الجزء ده. بنجيب الكلمات المرشحة بـ and ثم نفلترها على النمط الأصلي (مثلا moon بتظهر مع mon* ولازم تتشال)</p></div>
+<h3 id="spelling-correction">spelling correction</h3>
+<p>two uses: correcting the <strong>documents</strong> being indexed (especially ocr text, with confusions like <code>rn</code>/<code>m</code>, and keyboard-neighbor typos) and correcting <strong>queries</strong> (our focus, e.g. <code>alanis morisett</code> → either search the right spelling or show "did you mean ...?"). two flavors:</p>
+<ul>
+<li><strong>isolated word:</strong> each word alone; misses real-word typos (<code>from</code> → <code>form</code>)</li>
+<li><strong>context sensitive:</strong> uses neighbors; <code>i flew form heathrow</code> → <code>from</code></li>
+</ul>
+<p>it needs a <strong>lexicon</strong> of correct words: a standard dictionary, an industry-specific list, or the indexed corpus itself (names, acronyms, but also its typos). then return the lexicon words <strong>closest</strong> to the query, using edit distance, weighted edit distance or n-gram overlap.</p>
+<h4 id="edit-distance">edit distance</h4>
+<p>the minimum number of operations (insert, delete, replace, optionally transpose) to turn one string into another: <code>dof</code> → <code>dog</code> = 1; <code>cat</code> → <code>act</code> = 2 (1 with transposition); <code>cat</code> → <code>dog</code> = 3. computed with <strong>dynamic programming</strong>, where <code>d[i][j]</code> is the distance between the first i chars of s1 and first j of s2:</p>
+<pre><code>d[i][0] = i        d[0][j] = j
+d[i][j] = min( d[i-1][j-1] + (0 if s1[i] == s2[j] else 1),   # match / replace
+               d[i-1][j] + 1,                                 # delete
+               d[i][j-1] + 1 )                                # insert</code></pre>
+<p><code>cat</code> → <code>act</code>:</p>
+<pre><code>      &quot;&quot;  a  c  t
+&quot;&quot;     0  1  2  3
+c      1  1  1  2
+a      2  1  2  2
+t      3  2  2  2      -&gt; bottom right = 2</code></pre>
+<p><strong>weighted edit distance</strong> gives each operation a cost depending on the characters, to model ocr and keyboard errors (<code>m</code> mistyped as <code>n</code> is likelier than as <code>q</code>, so m→n costs less). it needs a weight matrix and a modified dp.</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ edit distance هو أقل عدد عمليات (إضافة، حذف، استبدال) نحول بيها كلمة لكلمة تانية، وبنحسبه بجدول dynamic programming. والـ weighted بيخلي العملية الأرجح (زي m بدل n) أرخص</p></div>
+<p><strong>using it:</strong> generate all strings within a set distance (e.g. 2), intersect with the correct words, show them as suggestions (or search all of them, which is slow, or auto-pick the single likeliest, which saves a round trip but takes power from the user). comparing the query with <strong>every</strong> dictionary term is too slow, so first cut the candidates with <strong>n-gram overlap</strong>.</p>
+<h4 id="n-gram-overlap-and-jaccard">n-gram overlap and jaccard</h4>
+<p>split the query and the lexicon terms into n-grams, use the n-gram index (the same one as wildcards) to fetch terms sharing n-grams with the query, and threshold on how many match. to normalize, use the <strong>jaccard coefficient</strong>:</p>
+<pre><code>jc(x, y) = |x ∩ y| / |x ∪ y|</code></pre>
+<p>it is 1 for identical sets, 0 for disjoint, always in [0, 1], and the sets may have different sizes. example with trigrams: <code>november</code> = nov ove vem emb mbe ber; <code>december</code> = dec ece cem emb mbe ber. 3 grams overlap, so jc = 3 / (6 + 6 − 3) = 3/9 ≈ <strong>0.33</strong>, below a threshold like 0.8, so no match.</p>
+<p>with bigrams, query <code>lord</code> = lo, or, rd, keeping words that match 2 of 3:</p>
+<pre><code>lo -&gt; alone, lore, sloth
+or -&gt; border, lore, morbid
+rd -&gt; ardent, border, card</code></pre>
+<p><code>lore</code> (lo + or) and <code>border</code> (or + rd) survive. the usual postings merge counts matches and can be adapted to compute jaccard.</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ jaccard بيقيس التشابه بين مجموعتين: عدد المشترك مقسوم على عدد كل العناصر. في november و december المشترك 3 من 9 يعني 0.33 فمش متشابهين كفاية</p></div>
+<h4 id="context-sensitive-correction">context-sensitive correction</h4>
+<p>for <code>flew form heathrow</code> no doc matches the phrase, so suggest <code>flew from heathrow</code>.</p>
+<ul>
+<li>take the close dictionary terms for each word (weighted edit distance) and try phrases with <strong>one word fixed at a time</strong>: <code>flew from heathrow</code>, <code>fled form heathrow</code>, <code>flea form heathrow</code>; suggest the one with the most hits (<strong>hit-based correction</strong>)</li>
+<li>exercise: 7 alternatives for flew, 19 for form, 3 for heathrow. one word at a time: 7 + 19 + 3 = <strong>29</strong> phrases; every combination would be 7 × 19 × 3 = <strong>399</strong>. the slide's scheme is the first, but check which one your instructor expects</li>
+<li>alternative: split into biwords, keep biwords that need only <strong>one</strong> term corrected, enumerate only phrases built from <strong>common</strong> biwords</li>
+</ul>
+<p><strong>choosing what to show:</strong> the alternative with the most hits, query-log analysis, or a probabilistic ranking:</p>
+<pre><code>argmax over corrections of  p(correction | query)
+  = argmax  p(query | correction) * p(correction)
+              noisy channel          language model</code></pre>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ noisy channel: احتمال إن الشخص يكتب الغلط ده وهو قاصد الكلمة الصح، مضروب في احتمال إن الكلمة الصح نفسها شائعة</p></div>
+<h3 id="soundex">soundex</h3>
+<p>a family of heuristics that expand a query into <strong>phonetic equivalents</strong>; language specific, mainly for <strong>names</strong> (<code>chebyshev</code> ~ <code>tchebycheff</code>). invented for the us census in 1918. idea: turn every indexed token and every query term into a 4-character code, and index and search the codes.</p>
+<ol type="1">
+<li>keep the first letter</li>
+<li>replace <code>a e i o u h w y</code> with <code>0</code></li>
+<li>replace the rest with digits: <code>b f p v</code> → 1; <code>c g j k q s x z</code> → 2; <code>d t</code> → 3; <code>l</code> → 4; <code>m n</code> → 5; <code>r</code> → 6</li>
+<li>collapse consecutive duplicate digits (<code>55</code> → <code>5</code>)</li>
+<li>remove all zeros</li>
+<li>pad with zeros and keep 4 positions: letter + 3 digits</li>
+</ol>
+<p>the first letter stays a letter only. zeros are removed <strong>after</strong> collapsing, so two same-code letters separated by a vowel are both kept (<code>b-a-b</code> → 101 → 11).</p>
+<pre><code>herman  -&gt; h 0 6 5 0 5     -&gt; h655
+hermann -&gt; h 0 6 5 0 5 5   -&gt; collapse 55 -&gt; h655    (same code)
+robert  -&gt; r 0 1 0 6 3     -&gt; r163
+rupert  -&gt; r 0 1 0 6 3     -&gt; r163      (collide)</code></pre>
+<p>(codes are written lowercase here; the slides write them uppercase, e.g. h655.)</p>
+<p><strong>how useful?</strong> not very for ir. fine for high-recall tasks (interpol) but biased toward names of certain nationalities; zobel and dart (1996) show other phonetic algorithms work much better. it is still the classic one in most databases.</p>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الـ soundex بيحول الاسم لكود من 4 رموز (حرف + 3 أرقام) حسب نطقه، فالأسماء المتشابهة صوتيا زي robert و rupert بتاخد نفس الكود. مفيد للأسماء بس مش قوي في الـ ir</p></div>
+<h3 id="everything-together">everything together</h3>
+<p>the engine now has a positional index with skip pointers, a wildcard index (permuterm or k-gram), spelling correction and soundex, so it can answer:</p>
+<pre><code>(spell(moriset) /3 toron*to) or soundex(chaikofski)</code></pre>
+<p>meaning: a spell-corrected <code>moriset</code> within 3 words of any term matching <code>toron*to</code>, <strong>or</strong> any name that sounds like <code>chaikofski</code>. a query parser splits it into sub-queries and sends each to the right index.</p>
+<p>design questions from the final exercise: does stemming happen before the soundex index? what about the n-gram indexes? a reasonable view: n-grams and soundex work on raw or lightly normalized forms, because stemming distorts spelling and sound; the main term index can use stemming.</p>
+<h3 id="quick-summary-3">quick summary</h3>
+<ul>
+<li>dictionary: hash = fast exact lookup; tree/b-tree = prefix search</li>
+<li>wildcards: trailing → b-tree range; leading → reversed b-tree; middle → permuterm (4× space) or k-gram index (+ post-filter)</li>
+<li>spelling: edit distance (dp) + n-gram overlap (jaccard) to shortlist; context via one-word-at-a-time and hits; ranking by noisy channel</li>
+<li>soundex: first letter + 3 digits, phonetic, for names, weak for ir</li>
+</ul>
+<div class="ar" dir="rtl" lang="ar"><span class="artag">عربي</span><p>الخلاصة: الـ hash سريع للمطابقة التامة والـ tree يدعم البحث بالبادئة. للنجمة نستخدم b-tree أو permuterm أو k-gram. وللأخطاء الإملائية edit distance مع n-gram، وللأسماء soundex</p></div>
+          </div>
+
+          <!-- Questions Container Task 5 -->
+          <div class="thm-questions-wrapper">
+            <div class="thm-questions-header-bar">
+              <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+              <h3 class="thm-questions-header-title">Answer the questions below</h3>
+            </div>
+
+            <!-- Q 5.1 -->
+            <div class="thm-question-card" id="card-q-5-1">
+              <div class="thm-question-prompt">
+                <span class="thm-q-idx">1.</span>
+                <span>In a Permuterm index, what special terminal character is appended to each word to mark its boundary before generating rotations?</span>
+              </div>
+              <div class="thm-question-row">
+                <input type="text" class="thm-input-field" id="input-q-5-1" placeholder="Answer format: *" onkeydown="handleEnter(event, 5, 1)" autocomplete="off">
+                <button class="thm-btn-submit" id="btn-q-5-1" onclick="submitAnswer(5, 1)">Submit</button>
+                <button class="thm-btn-hint" onclick="toggleHint(5, 1)">💡 Hint</button>
+              </div>
+              <div class="thm-hint-text-box" id="hint-q-5-1">
+                <strong>Hint:</strong> For hello, the rotations are hello$, ello$h, llo$he, lo$hel, o$hell, $hello.
+              </div>
+              <div class="thm-feedback-alert" id="feedback-q-5-1"></div>
+            </div>
+
+            <!-- Q 5.2 -->
+            <div class="thm-question-card" id="card-q-5-2">
+              <div class="thm-question-prompt">
+                <span class="thm-q-idx">2.</span>
+                <span>What dynamic programming metric measures the minimum number of character insertions, deletions, and replacements needed to transform one string into another?</span>
+              </div>
+              <div class="thm-question-row">
+                <input type="text" class="thm-input-field" id="input-q-5-2" placeholder="Answer format: **** ********" onkeydown="handleEnter(event, 5, 2)" autocomplete="off">
+                <button class="thm-btn-submit" id="btn-q-5-2" onclick="submitAnswer(5, 2)">Submit</button>
+                <button class="thm-btn-hint" onclick="toggleHint(5, 2)">💡 Hint</button>
+              </div>
+              <div class="thm-hint-text-box" id="hint-q-5-2">
+                <strong>Hint:</strong> It computes d[i][j] in a table where operations have cost 1 (or weighted). It is also known as Levenshtein distance.
+              </div>
+              <div class="thm-feedback-alert" id="feedback-q-5-2"></div>
+            </div>
+
+            <!-- Q 5.3 -->
+            <div class="thm-question-card" id="card-q-5-3">
+              <div class="thm-question-prompt">
+                <span class="thm-q-idx">3.</span>
+                <span>What is the 4-character Soundex code for the names "Robert" and "Rupert"?</span>
+              </div>
+              <div class="thm-question-row">
+                <input type="text" class="thm-input-field" id="input-q-5-3" placeholder="Answer format: **** (e.g. r123)" onkeydown="handleEnter(event, 5, 3)" autocomplete="off">
+                <button class="thm-btn-submit" id="btn-q-5-3" onclick="submitAnswer(5, 3)">Submit</button>
+                <button class="thm-btn-hint" onclick="toggleHint(5, 3)">💡 Hint</button>
+              </div>
+              <div class="thm-hint-text-box" id="hint-q-5-3">
+                <strong>Hint:</strong> Keep first letter R, vowels drop to 0, b/p -> 1, r -> 6, t -> 3. Form is r + 3 digits.
+              </div>
+              <div class="thm-feedback-alert" id="feedback-q-5-3"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="thm-footer">
+  <div class="thm-footer-inner">
+    <div>TryHackMe IR Room · Information Retrieval Masterclass (Lectures 1-4)</div>
+    <div>English Content + <span class="arinl" dir="rtl">ملاحظات بالعربي</span></div>
+    <div class="copyright-box">
+  <p>
+    &copy; 2026 All rights reserved. 
+    Created by <span class="author">s4yed</span> | 
+    Modified by <span class="author">Al-Hussein</span>
+  </p>
+</div>
+
+<style>
+.copyright-box {
+  background: #14161b;
+  border: 1px solid #23262d;
+  color: #8b909c;
+  padding: 14px 20px;
+  border-radius: 12px;
+  text-align: center;
+  font-family: "Inter", sans-serif;
+  font-size: 13.5px;
+  margin: 20px auto;
+  max-width: 1080px;
+}
+.copyright-box .author {
+  color: #5eead4;
+  font-weight: 600;
+}
+</style> 
+  </div>
+</footer>
+
+<!-- Toast Element -->
+<div id="thm-toast">
+  <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+  <span id="thm-toast-msg">Notification</span>
+</div>
+
+<!-- Room Complete Modal -->
+<div class="thm-modal-backdrop" id="thm-complete-modal">
+  <div class="thm-modal-box">
+    <div class="thm-modal-badge">
+      <svg viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
+    </div>
+    <h2>ROOM COMPLETED!</h2>
+    <p>Congratulations! You have completed all 5 tasks and mastered the foundational concepts of Information Retrieval.</p>
+    <div class="thm-modal-stats-grid">
+      <div class="thm-stat-cell">
+        <div class="thm-stat-num">5 / 5</div>
+        <div class="thm-stat-lbl">Tasks Done</div>
+      </div>
+      <div class="thm-stat-cell">
+        <div class="thm-stat-num">100%</div>
+        <div class="thm-stat-lbl">Progress</div>
+      </div>
+      <div class="thm-stat-cell">
+        <div class="thm-stat-num">11 / 11</div>
+        <div class="thm-stat-lbl">Cleared</div>
+      </div>
+    </div>
+    <button class="thm-modal-btn" onclick="closeCompleteModal()">Review Room Content</button>
+  </div>
+</div>
+
+<script>
+// --- State & Storage ---
+var STORAGE_KEY = 'thm_ir_room_state_v1';
+
+var roomState = {
+  tasks: {
+    1: { unlocked: true, completed: false },
+    2: { unlocked: false, completed: false },
+    3: { unlocked: false, completed: false },
+    4: { unlocked: false, completed: false },
+    5: { unlocked: false, completed: false }
+  },
+  questions: {
+    '2-1': { solved: false, answer: '' },
+    '2-2': { solved: false, answer: '' },
+    '3-1': { solved: false, answer: '' },
+    '3-2': { solved: false, answer: '' },
+    '3-3': { solved: false, answer: '' },
+    '4-1': { solved: false, answer: '' },
+    '4-2': { solved: false, answer: '' },
+    '4-3': { solved: false, answer: '' },
+    '5-1': { solved: false, answer: '' },
+    '5-2': { solved: false, answer: '' },
+    '5-3': { solved: false, answer: '' }
+  },
+  arabic: true,
+  theme: 'dark'
+};
+
+var answerKeys = {
+  '2-1': ['relevance'],
+  '2-2': ['iterative', 'an iterative process', 'iterative process'],
+  '3-1': ['accuracy'],
+  '3-2': ['postings', 'postings list', 'posting', 'posting list'],
+  '3-3': ['smallest df', 'smallest', 'shortest', 'smallest df first', 'smallest list', 'shortest list'],
+  '4-1': ['√l', 'sqrt(l)', 'sqrt(l)', 'sqrt(L)', '√L', 'square root of l', 'sqrt l'],
+  '4-2': ['porter', "porter's", "porter's algorithm", 'porter stemmer', 'porter algorithm'],
+  '4-3': ['positional index', 'positional', 'positional indexer'],
+  '5-1': ['$', 'dollar', 'dollar sign', '$ sign'],
+  '5-2': ['edit distance', 'levenshtein distance', 'levenshtein', 'edit-distance'],
+  '5-3': ['r163']
+};
+
+// Web Audio API Sound generator
+var audioCtx = null;
+function playSound(type) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    var now = audioCtx.currentTime;
+
+    if (type === 'correct') {
+      var osc1 = audioCtx.createOscillator();
+      var osc2 = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc1.type = 'sine'; osc2.type = 'sine';
+      osc1.frequency.setValueAtTime(587.33, now); // D5
+      osc2.frequency.setValueAtTime(880, now + 0.08); // A5
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc1.connect(gain); osc2.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc1.start(now); osc1.stop(now + 0.12);
+      osc2.start(now + 0.08); osc2.stop(now + 0.35);
+    } else if (type === 'wrong') {
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.setValueAtTime(110, now + 0.1);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(now); osc.stop(now + 0.3);
+    } else if (type === 'victory') {
+      var notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+      notes.forEach(function(freq, i) {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + (i * 0.12));
+        gain.gain.setValueAtTime(0.15, now + (i * 0.12));
+        gain.gain.exponentialRampToValueAtTime(0.001, now + (i * 0.12) + 0.4);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(now + (i * 0.12)); osc.stop(now + (i * 0.12) + 0.4);
+      });
+    }
+  } catch(e) {}
+}
+
+// Toast notification
+var toastTimer = null;
+function showToast(msg) {
+  var t = document.getElementById('thm-toast');
+  var m = document.getElementById('thm-toast-msg');
+  m.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+}
+
+// Save & Load
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(roomState)); } catch(e) {}
+}
+function loadState() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (parsed && parsed.tasks) roomState = parsed;
+    }
+  } catch(e) {}
+}
+
+// UI Sync
+function syncUI() {
+  // Theme
+  document.documentElement.setAttribute('data-theme', roomState.theme);
+  var themeLabel = document.getElementById('thm-theme-label');
+  if (themeLabel) themeLabel.textContent = roomState.theme === 'dark' ? 'Light' : 'Dark';
+
+  // Arabic
+  var arbBtn = document.getElementById('thm-toggle-arabic-btn');
+  if (roomState.arabic) {
+    document.body.classList.remove('no-ar');
+    if (arbBtn) arbBtn.classList.add('active');
+  } else {
+    document.body.classList.add('no-ar');
+    if (arbBtn) arbBtn.classList.remove('active');
+  }
+
+  // Tasks & Questions
+  var completedCount = 0;
+  for (var t = 1; t <= 5; t++) {
+    var card = document.getElementById('task-card-' + t);
+    var navItem = document.getElementById('nav-item-' + t);
+    var navIcon = document.getElementById('nav-icon-' + t);
+    var navStatus = document.getElementById('nav-status-' + t);
+    var statusTag = document.getElementById('task-' + t + '-status-tag');
+    var overlay = document.getElementById('task-' + t + '-locked-overlay');
+    var mobNav = document.getElementById('mob-nav-' + t);
+    var mobIcon = document.getElementById('mob-icon-' + t);
+
+    if (roomState.tasks[t].completed) {
+      completedCount++;
+      card.classList.remove('is-locked');
+      if (overlay) overlay.style.display = 'none';
+
+      statusTag.className = 'thm-task-status-tag tag-completed';
+      statusTag.innerHTML = '✓ COMPLETED';
+
+      navItem.className = 'thm-task-nav-item completed';
+      navIcon.className = 'thm-nav-icon thm-status-icon-complete';
+      navIcon.textContent = '✓';
+      navStatus.textContent = 'COMPLETE';
+
+      if (mobNav) {
+        mobNav.className = 'thm-mob-nav-btn completed';
+        if (mobIcon) mobIcon.textContent = '✓';
+      }
+
+      if (t === 1) {
+        var completeBtn = document.getElementById('task-1-complete-btn');
+        var completeText = document.getElementById('task-1-complete-btn-text');
+        if (completeBtn) completeBtn.className = 'thm-btn-complete completed-state';
+        if (completeText) completeText.innerHTML = '✓ Completed';
+      }
+    } else if (roomState.tasks[t].unlocked) {
+      card.classList.remove('is-locked');
+      if (overlay) overlay.style.display = 'none';
+
+      statusTag.className = 'thm-task-status-tag tag-active';
+      statusTag.innerHTML = '⏳ IN PROGRESS';
+
+      navItem.className = 'thm-task-nav-item active';
+      navIcon.className = 'thm-nav-icon thm-status-icon-pending';
+      navIcon.textContent = '⏳';
+      navStatus.textContent = 'IN PROGRESS';
+
+      if (mobNav) {
+        mobNav.className = 'thm-mob-nav-btn active';
+        if (mobIcon) mobIcon.textContent = '⏳';
+      }
+    } else {
+      card.classList.add('is-locked');
+      if (overlay) overlay.style.display = 'flex';
+
+      statusTag.className = 'thm-task-status-tag tag-locked';
+      statusTag.innerHTML = '🔒 LOCKED';
+
+      navItem.className = 'thm-task-nav-item locked';
+      navIcon.className = 'thm-nav-icon thm-status-icon-locked';
+      navIcon.textContent = '🔒';
+      navStatus.textContent = 'LOCKED';
+
+      if (mobNav) {
+        mobNav.className = 'thm-mob-nav-btn locked';
+        if (mobIcon) mobIcon.textContent = '🔒';
+      }
+    }
+  }
+
+  // Restore Question Inputs
+  for (var qId in roomState.questions) {
+    if (roomState.questions[qId].solved) {
+      markQuestionSolvedUI(qId, roomState.questions[qId].answer);
+    }
+  }
+
+  // Progress Bar
+  var pct = (completedCount / 5) * 100;
+  var bar = document.getElementById('thm-progress-bar');
+  var num = document.getElementById('thm-progress-number');
+  var stat = document.getElementById('thm-tasks-stat');
+  if (bar) bar.style.width = pct + '%';
+  if (num) num.textContent = Math.round(pct) + '%';
+  if (stat) stat.textContent = completedCount + ' / 5 Tasks Complete';
+}
+
+function markQuestionSolvedUI(qId, ans) {
+  var card = document.getElementById('card-q-' + qId);
+  var inp = document.getElementById('input-q-' + qId);
+  var btn = document.getElementById('btn-q-' + qId);
+  var fdbk = document.getElementById('feedback-q-' + qId);
+
+  if (card) card.classList.add('solved');
+  if (inp) {
+    inp.value = ans || inp.value;
+    inp.disabled = true;
+    inp.classList.add('correct-input');
+  }
+  if (btn) {
+    btn.className = 'thm-btn-submit correct-btn';
+    btn.innerHTML = '✓ Correct Answer';
+    btn.disabled = true;
+  }
+  if (fdbk) {
+    fdbk.className = 'thm-feedback-alert success';
+    fdbk.innerHTML = '✓ Correct!';
+  }
+}
+
+// Complete Task 1 Action
+function completeTask1() {
+  if (roomState.tasks[1].completed) return;
+  roomState.tasks[1].completed = true;
+  roomState.tasks[2].unlocked = true;
+
+  saveState();
+  syncUI();
+  playSound('correct');
+  showToast('Task 1 completed! Task 2 unlocked.');
+
+  setTimeout(function() {
+    jumpToTask(2);
+  }, 450);
+}
+
+// Submit Question
+function submitAnswer(taskNum, qNum) {
+  var qId = taskNum + '-' + qNum;
+  var inp = document.getElementById('input-q-' + qId);
+  var card = document.getElementById('card-q-' + qId);
+  var fdbk = document.getElementById('feedback-q-' + qId);
+  if (!inp) return;
+
+  var val = inp.value.trim().toLowerCase();
+  if (!val) {
+    showToast('Please type an answer first!');
+    inp.focus();
+    return;
+  }
+
+  var accepted = answerKeys[qId] || [];
+  var isCorrect = false;
+
+  for (var i = 0; i < accepted.length; i++) {
+    if (val === accepted[i].toLowerCase()) {
+      isCorrect = true;
+      break;
+    }
+  }
+
+  if (isCorrect) {
+    roomState.questions[qId].solved = true;
+    roomState.questions[qId].answer = val;
+    markQuestionSolvedUI(qId, val);
+    playSound('correct');
+    showToast('Correct answer!');
+
+    // Check if task is fully completed
+    checkTaskCompletion(taskNum);
+    saveState();
+  } else {
+    playSound('wrong');
+    inp.classList.remove('shake');
+    void inp.offsetWidth; // re-trigger animation
+    inp.classList.add('shake');
+    if (fdbk) {
+      fdbk.className = 'thm-feedback-alert error';
+      fdbk.innerHTML = '✗ Incorrect answer, try again! Need a clue? Click Hint.';
+    }
+    showToast('Incorrect answer, try again!');
+  }
+}
+
+function handleEnter(e, taskNum, qNum) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    submitAnswer(taskNum, qNum);
+  }
+}
+
+function toggleHint(taskNum, qNum) {
+  var hintBox = document.getElementById('hint-q-' + taskNum + '-' + qNum);
+  if (hintBox) hintBox.classList.toggle('open');
+}
+
+function checkTaskCompletion(taskNum) {
+  var allSolved = true;
+  if (taskNum === 2) {
+    allSolved = roomState.questions['2-1'].solved && roomState.questions['2-2'].solved;
+  } else if (taskNum === 3) {
+    allSolved = roomState.questions['3-1'].solved && roomState.questions['3-2'].solved && roomState.questions['3-3'].solved;
+  } else if (taskNum === 4) {
+    allSolved = roomState.questions['4-1'].solved && roomState.questions['4-2'].solved && roomState.questions['4-3'].solved;
+  } else if (taskNum === 5) {
+    allSolved = roomState.questions['5-1'].solved && roomState.questions['5-2'].solved && roomState.questions['5-3'].solved;
+  }
+
+  if (allSolved && !roomState.tasks[taskNum].completed) {
+    roomState.tasks[taskNum].completed = true;
+    var nextTask = taskNum + 1;
+    if (nextTask <= 5) {
+      roomState.tasks[nextTask].unlocked = true;
+    }
+
+    saveState();
+    syncUI();
+
+    if (taskNum === 5) {
+      setTimeout(function() {
+        triggerRoomCompletion();
+      }, 500);
+    } else {
+      showToast('Task ' + taskNum + ' Complete! Task ' + nextTask + ' is now unlocked.');
+      setTimeout(function() {
+        jumpToTask(nextTask);
+      }, 500);
+    }
+  }
+}
+
+// Jump / Toggle Task Accordion
+function toggleTask(num) {
+  var card = document.getElementById('task-card-' + num);
+  if (card) card.classList.toggle('collapsed');
+}
+
+function jumpToTask(num) {
+  var card = document.getElementById('task-card-' + num);
+  if (card) {
+    card.classList.remove('collapsed');
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    card.classList.add('active-card');
+  }
+}
+
+// Arabic & Theme Toggles
+function toggleArabicNotes() {
+  roomState.arabic = !roomState.arabic;
+  saveState();
+  syncUI();
+  showToast(roomState.arabic ? 'Arabic notes displayed (ملاحظات عربي ظاهرة)' : 'Arabic notes hidden (ملاحظات عربي مخفية)');
+}
+
+function toggleTheme() {
+  roomState.theme = roomState.theme === 'dark' ? 'light' : 'dark';
+  saveState();
+  syncUI();
+  showToast(roomState.theme === 'dark' ? 'Switched to THM Dark' : 'Switched to THM Light');
+}
+
+function confirmResetProgress() {
+  if (confirm('Are you sure you want to reset all room progress? All questions will be reset.')) {
+    localStorage.removeItem(STORAGE_KEY);
+    roomState = {
+      tasks: {
+        1: { unlocked: true, completed: false },
+        2: { unlocked: false, completed: false },
+        3: { unlocked: false, completed: false },
+        4: { unlocked: false, completed: false },
+        5: { unlocked: false, completed: false }
+      },
+      questions: {
+        '2-1': { solved: false, answer: '' },
+        '2-2': { solved: false, answer: '' },
+        '3-1': { solved: false, answer: '' },
+        '3-2': { solved: false, answer: '' },
+        '3-3': { solved: false, answer: '' },
+        '4-1': { solved: false, answer: '' },
+        '4-2': { solved: false, answer: '' },
+        '4-3': { solved: false, answer: '' },
+        '5-1': { solved: false, answer: '' },
+        '5-2': { solved: false, answer: '' },
+        '5-3': { solved: false, answer: '' }
+      },
+      arabic: true,
+      theme: 'dark'
+    };
+    saveState();
+    location.reload();
+  }
+}
+
+// Terminal window enhancements
+function formatTerminalWindows() {
+  var pres = document.querySelectorAll('.thm-task-content-inner pre');
+  pres.forEach(function(pre) {
+    if (pre.closest('.thm-terminal-box')) return;
+    var box = document.createElement('div');
+    box.className = 'thm-terminal-box';
+
+    var header = document.createElement('div');
+    header.className = 'thm-terminal-header';
+    header.innerHTML = '<div class="thm-terminal-dots"><span class="thm-dot dot-red"></span><span class="thm-dot dot-yellow"></span><span class="thm-dot dot-green"></span></div><span class="thm-terminal-title">ir@tryhackme:~$</span><button class="thm-copy-btn" type="button">Copy</button>';
+
+    var copyBtn = header.querySelector('.thm-copy-btn');
+    copyBtn.onclick = function() {
+      var text = pre.innerText;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(function(){ copyBtn.textContent = 'Copy'; }, 1500);
+        });
+      } else {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(function(){ copyBtn.textContent = 'Copy'; }, 1500);
+      }
+    };
+
+    pre.parentNode.insertBefore(box, pre);
+    box.appendChild(header);
+    box.appendChild(pre);
+  });
+}
+
+// Celebration Confetti
+function triggerRoomCompletion() {
+  playSound('victory');
+  var modal = document.getElementById('thm-complete-modal');
+  if (modal) modal.classList.add('open');
+  startConfetti();
+}
+
+function closeCompleteModal() {
+  var modal = document.getElementById('thm-complete-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+var confettiActive = false;
+function startConfetti() {
+  var canvas = document.getElementById('thm-confetti-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  var pieces = [];
+  var colors = ['#21c35e', '#10b981', '#38bdf8', '#f59e0b', '#ef4444', '#a855f7'];
+
+  for (var i = 0; i < 140; i++) {
+    pieces.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      r: Math.random() * 6 + 4,
+      d: Math.random() * 140 + 10,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      tilt: Math.floor(Math.random() * 10) - 10,
+      tiltAngleInc: (Math.random() * 0.07) + 0.05,
+      tiltAngle: 0
+    });
+  }
+
+  confettiActive = true;
+  var startTime = Date.now();
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (var i = 0; i < pieces.length; i++) {
+      var p = pieces[i];
+      ctx.beginPath();
+      ctx.lineWidth = p.r / 2;
+      ctx.strokeStyle = p.color;
+      ctx.moveTo(p.x + p.tilt + (p.r / 4), p.y);
+      ctx.lineTo(p.x + p.tilt, p.y + p.tilt + (p.r / 4));
+      ctx.stroke();
+
+      p.tiltAngle += p.tiltAngleInc;
+      p.y += (Math.cos(p.d) + 3 + p.r / 2) / 1.5;
+      p.x += Math.sin(0.01 * p.d);
+      p.tilt = Math.sin(p.tiltAngle - (i / 3)) * 15;
+
+      if (p.y > canvas.height) {
+        p.x = Math.random() * canvas.width;
+        p.y = -20;
+      }
+    }
+
+    if (Date.now() - startTime < 7000) {
+      requestAnimationFrame(draw);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      confettiActive = false;
+    }
+  }
+  draw();
+}
+
+window.addEventListener('resize', function() {
+  var canvas = document.getElementById('thm-confetti-canvas');
+  if (canvas && confettiActive) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+});
+
+// Scroll Listener for Dynamic Scroll Line
+window.addEventListener('scroll', function() {
+  var y = window.scrollY;
+  var max = document.documentElement.scrollHeight - window.innerHeight;
+  var pct = max > 0 ? (y / max * 100) : 0;
+  var scrollLine = document.getElementById('thm-scroll-line');
+  if (scrollLine) scrollLine.style.width = pct + '%';
+}, { passive: true });
+
+// Initialization
+document.addEventListener('DOMContentLoaded', function() {
+  loadState();
+  formatTerminalWindows();
+  syncUI();
+});
+</script>
+</body>
+</html>
