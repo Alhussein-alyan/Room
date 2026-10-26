@@ -67,6 +67,51 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: 130px;
 }
+  /* الكائن التفاعلي المتحرك في الركن (Draggable Pet) */
+.thm-draggable-pet {
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
+  width: 55px;
+  height: 55px;
+  z-index: 9999;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none; /* عشان يشتغل بسلاسة على الموبايل واللابتوب باللمس والماوس */
+  user-select: none;
+}
+
+.thm-draggable-pet:active {
+  cursor: grabbing;
+}
+
+/* حركة التنفس والطفو (Idle Animation) */
+.thm-pet-body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: petBreathe 3s ease-in-out infinite, petFloat 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px var(--thm-green-glow, rgba(16, 185, 129, 0.4)));
+  transition: transform 0.2s ease;
+}
+
+.thm-draggable-pet:hover .thm-pet-body {
+  transform: scale(1.1);
+}
+
+@keyframes petBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.07); }
+}
+
+@keyframes petFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(2deg); }
+}
 body {
   background-color: var(--thm-bg);
   color: var(--thm-text);
@@ -3418,6 +3463,72 @@ document.addEventListener('DOMContentLoaded', function() {
   formatTerminalWindows();
   syncUI();
 });
+  const pet = document.getElementById('floating-pet');
+let isDragging = false;
+let startX, startY, initialX, initialY;
+
+// دعم الماوس (لأجهزة الكمبيوتر)
+pet.addEventListener('mousedown', dragStart);
+document.addEventListener('mousemove', drag);
+document.addEventListener('mouseup', dragEnd);
+
+// دعم اللمس (للهواتف والتابلت)
+pet.addEventListener('touchstart', dragStart, { passive: true });
+document.addEventListener('touchmove', drag, { passive: true });
+document.addEventListener('touchend', dragEnd);
+
+function dragStart(e) {
+  isDragging = true;
+  const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+  const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+  
+  initialX = clientX - pet.getBoundingClientRect().left;
+  initialY = clientY - pet.getBoundingClientRect().top;
+  
+  // إلغاء الـ Transition أثناء السحب عشان يكون ناعم جداً
+  pet.style.transition = 'none';
+}
+
+function drag(e) {
+  if (!isDragging) return;
+  
+  const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+  const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+  
+  let currentX = clientX - initialX;
+  let currentY = clientY - initialY;
+
+  // الحفاظ على الكائن داخل حدود الشاشة عشان ما يخرجش ويختفي
+  const maxX = window.innerWidth - pet.offsetWidth;
+  const maxY = window.innerHeight - pet.offsetHeight;
+  
+  currentX = Math.max(10, Math.min(currentX, maxX - 10));
+  currentY = Math.max(10, Math.min(currentY, maxY - 10));
+
+  pet.style.left = `${currentX}px`;
+  pet.style.top = `${currentY}px`;
+  pet.style.bottom = 'auto'; // إلغاء الـ bottom القديم عشان يتحرك بحرية
+}
+
+function dragEnd() {
+  if (!isDragging) return;
+  isDragging = false;
+  pet.style.transition = 'all 0.2s ease';
+}
 </script>
+  <!-- الكائن التفاعلي القابل للتحريك -->
+<div id="floating-pet" class="thm-draggable-pet" title="Drag me anywhere!">
+  <div class="thm-pet-body">
+    <!-- رسمة الكائن (SVG) اللي ظاهرة عندك في الموقع -->
+    <svg viewBox="0 0 100 100" width="100%" height="100%">
+      <circle cx="50" cy="50" r="30" fill="#10b981" />
+      <circle cx="40" cy="45" r="5" fill="#030712" />
+      <circle cx="60" cy="45" r="5" fill="#030712" />
+      <path d="M 45 60 Q 50 65 55 60" stroke="#030712" stroke-width="3" fill="none" stroke-linecap="round" />
+      <path d="M 50 20 L 50 10" stroke="#10b981" stroke-width="4" stroke-linecap="round" />
+      <circle cx="50" cy="8" r="3" fill="#10b981" />
+    </svg>
+  </div>
+</div>
 </body>
 </html>
