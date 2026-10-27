@@ -3674,13 +3674,22 @@ function moveDrag(clientX, clientY) {
 }
 
 function endDrag() {
-  if (!isDragging && pressTimer) {
+  if (pressTimer) {
     clearTimeout(pressTimer);
   }
   isDragging = false;
   pet.style.transition = 'all 0.2s ease';
   pet.style.cursor = 'grab';
 }
+
+// تأمين إضافي: منع حدوث أي تداخل لو المستخدم بيضغط كليك عادي مش عايز يسحب
+pet.addEventListener('click', (e) => {
+  // لو كان بيسحب فعلاً، نمنع الـ click الافتراضي عشان ما يعملش مشاكل
+  if (isDragging) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+});
 </script>
 </body>
 </html>
