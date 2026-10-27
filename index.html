@@ -3512,6 +3512,87 @@ function dragEnd() {
   isDragging = false;
   pet.style.transition = 'all 0.2s ease';
 }
+  const pet = document.getElementById('floating-pet');
+let isDragging = false;
+let startX, startY, initialX, initialY;
+let pressTimer = null;
+
+// --- 1. دعم الكمبيوتر (الماوس) ---
+pet.addEventListener('mousedown', (e) => {
+  // التأكد إنه كليك شمال فقط
+  if (e.button !== 0) return;
+  startDrag(e.clientX, e.clientY);
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  moveDrag(e.clientX, e.clientY);
+});
+
+document.addEventListener('mouseup', endDrag);
+
+// --- 2. دعم الموبايل والتابلت (اللمس المطول / Long-press & Touch) ---
+pet.addEventListener('touchstart', (e) => {
+  // استخدام مؤقت (Timer) للتحقق من اللمس المطول (نصف ثانية مثلاً يبدأ السحب)
+  pressTimer = setTimeout(() => {
+    isDragging = true;
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+  }, 150); // استجابة سريعة ومريحة
+}, { passive: true });
+
+pet.addEventListener('touchmove', (e) => {
+  if (!isDragging) return;
+  const touch = e.touches[0];
+  moveDrag(touch.clientX, touch.clientY);
+}, { passive: true });
+
+pet.addEventListener('touchend', () => {
+  clearTimeout(pressTimer);
+  endDrag();
+});
+
+// --- وظائف السحب الأساسية ---
+function startDrag(clientX, clientY) {
+  isDragging = true;
+  const rect = pet.getBoundingClientRect();
+  initialX = clientX - rect.left;
+  initialY = clientY - rect.top;
+  
+  // إلغاء الـ Transition مؤقتاً أثناء السحب ليكون الحركة فورية وناعمة
+  pet.style.transition = 'none';
+  pet.style.cursor = 'grabbing';
+}
+
+function moveDrag(clientX, clientY) {
+  if (!isDragging) return;
+  
+  let currentX = clientX - initialX;
+  let currentY = clientY - initialY;
+
+  // الحفاظ على الكائن داخل حدود شاشة الجهاز عشان ما يخرجش ويختفي
+  const maxX = window.innerWidth - pet.offsetWidth;
+  const maxY = window.innerHeight - pet.offsetHeight;
+  
+  currentX = Math.max(10, Math.min(currentX, maxX - 10));
+  currentY = Math.max(10, Math.min(currentY, maxY - 10));
+
+  // تحويل الموقع لـ fixed وتحريكه مباشرة عبر الـ style
+  pet.style.position = 'fixed';
+  pet.style.left = `${currentX}px`;
+  pet.style.top = `${currentY}px`;
+  pet.style.bottom = 'auto';
+  pet.style.right = 'auto';
+}
+
+function endDrag() {
+  if (!isDragging && pressTimer) {
+    clearTimeout(pressTimer);
+  }
+  isDragging = false;
+  pet.style.transition = 'all 0.2s ease';
+  pet.style.cursor = 'grab';
+}
 </script>
   <!-- الكائن التفاعلي القابل للتحريك -->
 <div id="floating-pet" class="thm-draggable-pet" title="Drag me anywhere!">
