@@ -69,7 +69,7 @@ html {
 }
   /* الكائن التفاعلي المتحرك في الركن (Draggable Pet) */
 .thm-draggable-pet {
-  position: fixed;
+ position: fixed;
   bottom: 30px;
   left: 30px;
   width: 55px;
@@ -79,7 +79,7 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
-  touch-action: none; /* عشان يشتغل بسلاسة على الموبايل واللابتوب باللمس والماوس */
+  touch-action: none;
   user-select: none;
 }
 
@@ -102,12 +102,10 @@ html {
 .thm-draggable-pet:hover .thm-pet-body {
   transform: scale(1.1);
 }
-
 @keyframes petBreathe {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.07); }
 }
-
 @keyframes petFloat {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-5px) rotate(2deg); }
@@ -3608,5 +3606,80 @@ function endDrag() {
     </svg>
   </div>
 </div>
+  <script>
+const pet = document.getElementById('floating-pet');
+let isDragging = false;
+let initialX, initialY;
+let pressTimer = null;
+
+// 1. دعم الكمبيوتر (الماوس)
+pet.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return;
+  startDrag(e.clientX, e.clientY);
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  moveDrag(e.clientX, e.clientY);
+});
+
+document.addEventListener('mouseup', endDrag);
+
+// 2. دعم الموبايل والتابلت (اللمس المطول)
+pet.addEventListener('touchstart', (e) => {
+  pressTimer = setTimeout(() => {
+    isDragging = true;
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+  }, 150);
+}, { passive: true });
+
+pet.addEventListener('touchmove', (e) => {
+  if (!isDragging) return;
+  const touch = e.touches[0];
+  moveDrag(touch.clientX, touch.clientY);
+}, { passive: true });
+
+pet.addEventListener('touchend', () => {
+  clearTimeout(pressTimer);
+  endDrag();
+});
+
+function startDrag(clientX, clientY) {
+  isDragging = true;
+  const rect = pet.getBoundingClientRect();
+  initialX = clientX - rect.left;
+  initialY = clientY - rect.top;
+  pet.style.transition = 'none';
+  pet.style.cursor = 'grabbing';
+}
+
+function moveDrag(clientX, clientY) {
+  if (!isDragging) return;
+  let currentX = clientX - initialX;
+  let currentY = clientY - initialY;
+
+  const maxX = window.innerWidth - pet.offsetWidth;
+  const maxY = window.innerHeight - pet.offsetHeight;
+  
+  currentX = Math.max(10, Math.min(currentX, maxX - 10));
+  currentY = Math.max(10, Math.min(currentY, maxY - 10));
+
+  pet.style.position = 'fixed';
+  pet.style.left = `${currentX}px`;
+  pet.style.top = `${currentY}px`;
+  pet.style.bottom = 'auto';
+  pet.style.right = 'auto';
+}
+
+function endDrag() {
+  if (!isDragging && pressTimer) {
+    clearTimeout(pressTimer);
+  }
+  isDragging = false;
+  pet.style.transition = 'all 0.2s ease';
+  pet.style.cursor = 'grab';
+}
+</script>
 </body>
 </html>
