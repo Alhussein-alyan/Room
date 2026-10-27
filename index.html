@@ -69,7 +69,7 @@ html {
 }
   /* الكائن التفاعلي المتحرك في الركن (Draggable Pet) */
 .thm-draggable-pet {
- position: fixed;
+  position: fixed;
   bottom: 30px;
   left: 30px;
   width: 55px;
@@ -81,7 +81,7 @@ html {
   justify-content: center;
   touch-action: none;
   user-select: none;
-  pointer-events: auto;
+  /* السحر كله هنا: السماح للضغطات العادية بالمرور لو مفيش سحب حقيقي */
 }
 
 .thm-draggable-pet:active {
@@ -3690,6 +3690,111 @@ pet.addEventListener('click', (e) => {
     e.preventDefault();
   }
 });
+</script>
+  <script>
+const pet = document.getElementById('floating-pet');
+let isDragging = false;
+let hasMoved = false;
+let startX, startY, initialX, initialY;
+let pressTimer = null;
+
+if (pet) {
+  // --- الماوس (الكمبيوتر) ---
+  pet.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    hasMoved = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    
+    pressTimer = setTimeout(() => {
+      isDragging = true;
+      startDrag(e.clientX, e.clientY);
+    }, 120); // تأخير بسيط جداً للتفريق بين الكليك العادي والسحب
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) {
+      if (pressTimer && (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5)) {
+        // لو تحرك الماوس قبل انتهاء التايمر، نعتبرها سحب فوري
+        clearTimeout(pressTimer);
+        isDragging = true;
+        startDrag(startX, startY);
+      }
+      return;
+    }
+    moveDrag(e.clientX, e.clientY);
+  });
+
+  document.addEventListener('mouseup', (e) => {
+    if (pressTimer) clearTimeout(pressTimer);
+    endDrag();
+  });
+
+  // --- اللمس (الموبايل والتابلت) ---
+  pet.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    hasMoved = false;
+    startX = touch.clientX;
+    startY = touch.clientY;
+
+    pressTimer = setTimeout(() => {
+      isDragging = true;
+      startDrag(touch.clientX, touch.clientY);
+    }, 150);
+  }, { passive: true });
+
+  pet.addEventListener('touchmove', (e) => {
+    if (!isDragging) {
+      const touch = e.touches[0];
+      if (pressTimer && (Math.abs(touch.clientX - startX) > 6 || Math.abs(touch.clientY - startY) > 6)) {
+        clearTimeout(pressTimer);
+        isDragging = true;
+        startDrag(startX, startY);
+      }
+      return;
+    }
+    const touch = e.touches[0];
+    moveDrag(touch.clientX, touch.clientY);
+  }, { passive: true });
+
+  pet.addEventListener('touchend', () => {
+    if (pressTimer) clearTimeout(pressTimer);
+    endDrag();
+  });
+}
+
+function startDrag(clientX, clientY) {
+  const rect = pet.getBoundingClientRect();
+  initialX = clientX - rect.left;
+  initialY = clientY - rect.top;
+  pet.style.transition = 'none';
+  pet.style.cursor = 'grabbing';
+}
+
+function moveDrag(clientX, clientY) {
+  if (!isDragging) return;
+  hasMoved = true;
+  let currentX = clientX - initialX;
+  let currentY = clientY - initialY;
+
+  const maxX = window.innerWidth - pet.offsetWidth;
+  const maxY = window.innerHeight - pet.offsetHeight;
+  
+  currentX = Math.max(10, Math.min(currentX, maxX - 10));
+  currentY = Math.max(10, Math.min(currentY, maxY - 10));
+
+  pet.style.position = 'fixed';
+  pet.style.left = `${currentX}px`;
+  pet.style.top = `${currentY}px`;
+  pet.style.bottom = 'auto';
+  pet.style.right = 'auto';
+}
+
+function endDrag() {
+  isDragging = false;
+  pet.style.transition = 'all 0.2s ease';
+  pet.style.cursor = 'grab';
+}
 </script>
 </body>
 </html>
